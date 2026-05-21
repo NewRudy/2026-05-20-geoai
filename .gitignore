@@ -13,6 +13,7 @@ results/**
 checkpoints/**
 wandb/
 mlruns/
+external/**
 
 # Keep curated result folders visible
 !results/
@@ -33,4 +34,3 @@ application_default_credentials.json
 .DS_Store
 .idea/
 .vscode/
-
