@@ -7,33 +7,32 @@ data, public models, and auditable experiment logs.
 
 Tentative title:
 
-> Parameter-efficient adaptation of geospatial foundation models for flood
-> inundation mapping under spatial distribution shift
+> How Robust Is Multitemporal Sentinel-1/Sentinel-2 Fusion for Flood Mapping
+> under Optical Modality Degradation?
 
-Core idea: use Sen1Floods11 as a public benchmark, compare conventional
-segmentation baselines against Prithvi/TerraTorch-style geospatial foundation
-model adaptation, and evaluate whether parameter-efficient tuning improves
-cross-region flood mapping with lower compute.
+Core idea: build on the public OMBRIA dataset and OmbriaNet codebase to test
+whether the clean-split advantage of multitemporal S1/S2 fusion survives
+controlled Sentinel-2 degradation at inference time.
 
 ## Why This Direction
 
-- Fast: Sen1Floods11 is public and hosted on Google Cloud Storage.
+- Fast: OMBRIA is public, compact, and already cloned locally under ignored
+  `external/OMBRIA`.
 - Rigorous: the data, splits, model checkpoints, metrics, and logs can be made
   reproducible.
-- Current: GeoAI foundation models, PEFT, cross-region transfer, and responsible
-  GeoAI are active 2025-2026 topics.
-- Publishable: the likely paper contribution is not "new big model"; it is a
-  careful, reproducible, resource-aware adaptation study.
+- Scientifically grounded: flood events often limit optical observations, while
+  SAR remains available under cloud cover.
+- Publishable if the cloud U-Net pilot confirms a consistent clean-vs-degraded
+  sensitivity pattern.
 
 ## Initial Milestones
 
 1. Confirm target journal and paper scope.
-2. Mirror/index Sen1Floods11 from GCS.
-3. Establish baselines: simple threshold, U-Net, SegFormer/ViT baseline.
-4. Add geospatial foundation model adaptation: Prithvi-EO and/or TerraTorch.
-5. Run low-data and cross-event/cross-region experiments.
-6. Add responsible GeoAI checks: spatial failure modes, uncertainty/error maps,
-   and compute/memory reporting.
+2. Validate OMBRIA data pairing and reference metrics.
+3. Run clean S1/S2/bitemporal/multimodal U-Net variants on cloud GPU.
+4. Evaluate the same multimodal checkpoint under S2 degradation.
+5. Aggregate metrics and decide manuscript go/no-go.
+6. Add qualitative maps and per-chip failure analysis if results are coherent.
 7. Write the manuscript in LaTeX with a tracked BibTeX file.
 8. Push code, configs, logs, and non-sensitive results to GitHub.
 
@@ -56,4 +55,3 @@ cross-region flood mapping with lower compute.
   or large model checkpoints.
 - Treat journal quartile and indexing information as time-sensitive; verify
   again immediately before submission.
-
