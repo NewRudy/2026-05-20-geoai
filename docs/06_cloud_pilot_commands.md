@@ -5,6 +5,9 @@ These commands are intended for Colab or Kaggle, not the local Mac.
 ## Setup
 
 ```bash
+git clone https://github.com/NewRudy/2026-05-20-geoai.git
+cd 2026-05-20-geoai
+mkdir -p external
 git clone https://github.com/geodrak/OMBRIA.git external/OMBRIA
 pip install torch torchvision pillow numpy
 ```
