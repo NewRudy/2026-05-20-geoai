@@ -11,26 +11,25 @@
 
 \begin{frontmatter}
 
-\title{Parameter-Efficient Adaptation of Geospatial Foundation Models for Flood Inundation Mapping under Spatial Distribution Shift}
+\title{How Robust Is Multitemporal Sentinel-1/Sentinel-2 Fusion for Flood Mapping under Optical Modality Degradation?}
 
 \author[aff1]{Author Name}
 \affiliation[aff1]{organization={Affiliation to be confirmed}}
 
 \begin{abstract}
-Geospatial foundation models have shown promise for Earth observation tasks, but
-their practical value for data-scarce disaster mapping remains sensitive to
-geographic distribution shift, compute cost, and evaluation design. This study
-will benchmark parameter-efficient adaptation strategies for flood inundation
-mapping using the public Sen1Floods11 dataset. We compare conventional
-segmentation baselines with geospatial foundation model adaptation under
-cross-event and low-label settings, reporting segmentation accuracy,
-trainable-parameter counts, compute cost, and spatial failure modes. Results
-will clarify when resource-aware foundation-model adaptation improves flood
-mapping and when simpler baselines remain competitive.
+Multitemporal Sentinel-1/Sentinel-2 fusion can improve supervised flood mapping,
+but disaster response often faces incomplete or degraded optical observations.
+This study evaluates the sensitivity of flood segmentation models to sensor
+modality availability using the public OMBRIA dataset. We compare Sentinel-1,
+Sentinel-2, bitemporal, and multimodal U-Net-style baselines, then evaluate the
+same multimodal checkpoint under controlled Sentinel-2 degradation at inference
+time. The goal is not to claim a new state-of-the-art flood model, but to
+quantify when fusion remains useful and when reliance on optical inputs becomes a
+failure mode.
 \end{abstract}
 
 \begin{keyword}
-GeoAI \sep geospatial foundation model \sep flood mapping \sep remote sensing \sep parameter-efficient fine-tuning \sep responsible AI
+flood mapping \sep Sentinel-1 \sep Sentinel-2 \sep multimodal fusion \sep optical degradation \sep remote sensing
 \end{keyword}
 
 \end{frontmatter}
@@ -38,15 +37,14 @@ GeoAI \sep geospatial foundation model \sep flood mapping \sep remote sensing \s
 \section{Introduction}
 
 Draft after the first completed baseline experiments. The introduction should
-motivate rapid flood mapping, spatial transfer, and compute-aware GeoAI without
-overclaiming.
+motivate flood mapping, optical cloud limitations, SAR complementarity, and
+modality robustness without claiming operational readiness.
 
 \section{Related Work}
 
-Cover Sen1Floods11 \cite{bonafilia2020sen1floods11}, geospatial foundation
-models \cite{jakubik2023foundation}, recent surveys
-\cite{huang2025survey}, TerraTorch \cite{marsocci2025terratorch}, and
-responsible GeoAI \cite{li2026responsible}.
+Cover OMBRIA and OmbriaNet \cite{drakonakis2022ombrianet}, cross-modal flood
+mapping \cite{garg2023crossmodal}, and incomplete multimodal learning for remote
+sensing \cite{chen2023incomplete}.
 
 \section{Data}
 
@@ -79,4 +77,3 @@ Summarize evidence-backed findings.
 \bibliography{../references/paper}
 
 \end{document}
-

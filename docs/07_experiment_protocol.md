@@ -12,6 +12,24 @@ operational disaster response." The goal is to quantify whether fusion models
 remain reliable when optical inputs are missing or degraded, using the compact
 public OMBRIA dataset.
 
+## Literature Rationale
+
+The original OmbriaNet paper introduced a CNN-based multitemporal Sentinel-1 and
+Sentinel-2 fusion architecture for supervised flood mapping. Its results support
+the value of multi-temporal and multi-modal inputs under the original benchmark
+split.
+
+Recent flood-mapping work gives the robustness motivation. Cross-modal
+distillation studies note that Sentinel-2 can provide richer optical water
+signals but cannot penetrate cloud cover, while Sentinel-1 SAR can image through
+clouds and is therefore useful during flood events. Remote-sensing multimodal
+learning work also warns that models trained with complete modalities can
+degrade when modalities are incomplete during inference.
+
+This makes the proposed extension scientifically narrower and defensible:
+evaluate whether the OMBRIA fusion advantage survives controlled missing or
+degraded Sentinel-2 inputs.
+
 ## Hypotheses
 
 H1. Multitemporal inputs improve flood segmentation over after-event-only inputs
@@ -143,4 +161,3 @@ Day 6-7 if go:
 
 - Run repeated seeds or longer training.
 - Draft methods and results.
-
