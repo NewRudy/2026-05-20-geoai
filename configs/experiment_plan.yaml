@@ -1,0 +1,50 @@
+project: geoai_quickpaper
+dataset:
+  name: Sen1Floods11
+  source: gs://sen1floods11/
+  local_root: data/raw/sen1floods11
+  version_note: "Use official GCS v1.1 mirror; verify manifest before training."
+
+tasks:
+  - name: flood_inundation_segmentation
+    labels: hand_labeled_water_mask
+    invalid_value: -1
+
+splits:
+  primary: official_train_val_test
+  stress_tests:
+    - cross_event_holdout
+    - low_label_1_percent
+    - low_label_5_percent
+    - low_label_10_percent
+
+baselines:
+  - id: s1_threshold
+    description: "Simple Sentinel-1 water threshold baseline."
+  - id: unet_s1
+    description: "U-Net on Sentinel-1 VV/VH."
+  - id: unet_s1_s2
+    description: "U-Net on Sentinel-1 plus Sentinel-2 where available."
+  - id: prithvi_frozen_decoder
+    description: "Frozen Prithvi encoder plus trainable segmentation decoder."
+  - id: prithvi_peft
+    description: "Parameter-efficient Prithvi adaptation if supported."
+
+metrics:
+  segmentation:
+    - iou_water
+    - dice_f1_water
+    - precision_water
+    - recall_water
+    - per_event_iou
+  efficiency:
+    - trainable_parameters
+    - wall_time_minutes
+    - peak_gpu_memory_gb
+
+reporting_rules:
+  - "Report mean and per-event metrics."
+  - "Keep invalid/no-data pixels excluded consistently."
+  - "Store exact config, environment, and git commit for every run."
+  - "Do not include unverified or hand-edited metrics in manuscript tables."
+

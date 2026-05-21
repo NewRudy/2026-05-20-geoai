@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Data and large artifacts
+data/raw/**
+data/processed/**
+results/**
+checkpoints/**
+wandb/
+mlruns/
+
+# Keep curated result folders visible
+!results/
+!results/figures/
+!results/tables/
+!results/figures/.gitkeep
+!results/tables/.gitkeep
+
+# Credentials and local config
+.env
+*.pem
+*.key
+*.jsonl
+service-account*.json
+application_default_credentials.json
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
