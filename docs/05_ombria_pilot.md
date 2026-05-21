@@ -106,6 +106,25 @@ higher than S1/S2-only values, which supports the original paper's claim that
 multi-temporal/multi-modal fusion can help. However, those arrays should be
 treated as reference material until regenerated from scripts.
 
+Reference extraction script:
+
+- `scripts/extract_ombria_reference_metrics.py`
+
+Extracted from the original evaluation notebook, not regenerated:
+
+| Model | Mean IoU | Mean Accuracy | n |
+|---|---:|---:|---:|
+| S1 U-Net | 0.5507 | 0.7781 | 70 |
+| S2 U-Net | 0.5791 | 0.8412 | 70 |
+| SVM | 0.6245 | 0.8487 | 70 |
+| Bitemporal | 0.7765 | 0.8608 | 70 |
+| Multimodal | 0.8207 | 0.8900 | 70 |
+
+This gives a credible feasibility signal: the original model family has a clear
+multimodal advantage on the original test split. Our manuscript should not
+reclaim this as a new result. The possible extension is to test whether that
+multimodal advantage survives synthetic optical degradation at inference time.
+
 ## Scientific Direction Assessment
 
 The broad direction is feasible, but it should be scoped narrowly:
@@ -146,4 +165,3 @@ No-go conditions:
 - Degradation/ablation results are noisy with no interpretable pattern.
 - Review of target journals shows the contribution is too incremental without an
   external validation dataset.
-
