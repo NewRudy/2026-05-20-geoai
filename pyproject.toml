@@ -2,7 +2,7 @@
 name = "geoai-quickpaper"
 version = "0.1.0"
 description = "Reproducible code for a fast GeoAI flood mapping paper."
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
   "pandas>=2.0",
   "pyyaml>=6.0",
@@ -26,5 +26,4 @@ dev = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
-
+target-version = "py39"

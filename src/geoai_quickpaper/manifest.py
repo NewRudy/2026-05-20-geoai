@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 
 KNOWN_LAYERS = ("S1", "S2", "QC")
@@ -15,7 +16,7 @@ class ChipFile:
     path: Path
 
 
-def parse_sen1floods11_name(path: Path) -> ChipFile | None:
+def parse_sen1floods11_name(path: Path) -> Optional[ChipFile]:
     """Parse names like Bolivia_103757_S2.tif into event/chip/layer fields."""
     if path.suffix.lower() not in {".tif", ".tiff"}:
         return None
@@ -43,4 +44,3 @@ def build_manifest(root: Path) -> list[ChipFile]:
         for path in sorted(root.rglob("*.tif"))
         if (chip := parse_sen1floods11_name(path)) is not None
     ]
-
