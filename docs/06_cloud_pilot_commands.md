@@ -72,6 +72,45 @@ for mode in none zero_after zero_all noise_after patch_after; do
 done
 ```
 
+## Robust Multimodal Baseline
+
+Train one additional clean multimodal checkpoint with lightweight S2 modality
+dropout. This is the smallest method-extension baseline: the model still sees
+the same OMBRIA data and the same U-Net architecture, but training includes
+random clean, zeroed, noisy, and patch-masked S2 inputs.
+
+```bash
+python scripts/train_ombria_unet.py \
+  --root external/OMBRIA \
+  --variant multimodal \
+  --train-degrade-s2 modality_dropout \
+  --epochs 30 \
+  --batch-size 8 \
+  --base-channels 24
+```
+
+Evaluate that robust checkpoint under the same degradation modes:
+
+```bash
+for mode in none zero_after zero_all noise_after patch_after; do
+  python scripts/train_ombria_unet.py \
+    --root external/OMBRIA \
+    --variant multimodal \
+    --degrade-s2 "$mode" \
+    --train-degrade-s2 modality_dropout \
+    --batch-size 8 \
+    --base-channels 24 \
+    --eval-checkpoint results/runs/ombria/multimodal_none_train-modality_dropout_seed7/best_model.pt
+done
+```
+
+Expected interpretation:
+
+- If clean performance remains close to the standard multimodal checkpoint and
+  degraded performance improves, the paper has a stronger method contribution.
+- If clean performance collapses, reduce degradation probability or frame the
+  result as a robustness-accuracy tradeoff.
+
 ## Interpretation Guardrail
 
 Do not use pilot metrics as final manuscript results. Final results need:

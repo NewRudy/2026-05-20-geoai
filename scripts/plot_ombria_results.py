@@ -30,10 +30,17 @@ def main() -> None:
     args.out_md.parent.mkdir(parents=True, exist_ok=True)
 
     lines = [
-        "| Run | Variant | S2 degradation | Test IoU | Test F1 | Test Precision | Test Recall |",
-        "|---|---|---|---:|---:|---:|---:|",
+        "| Run | Variant | Train S2 degradation | Test S2 degradation | Test IoU | Test F1 | Test Precision | Test Recall |",
+        "|---|---|---|---|---:|---:|---:|---:|",
     ]
-    for row in sorted(rows, key=lambda r: (r.get("variant", ""), r.get("degrade_s2", ""))):
+    for row in sorted(
+        rows,
+        key=lambda r: (
+            r.get("variant", ""),
+            r.get("train_degrade_s2", ""),
+            r.get("degrade_s2", ""),
+        ),
+    ):
         metrics = [
             as_float(row.get("test_iou")),
             as_float(row.get("test_f1")),
@@ -47,6 +54,7 @@ def main() -> None:
                 [
                     row.get("run", ""),
                     row.get("variant", ""),
+                    row.get("train_degrade_s2", "none"),
                     row.get("degrade_s2", ""),
                     *formatted,
                 ]
@@ -60,4 +68,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

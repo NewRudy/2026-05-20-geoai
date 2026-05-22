@@ -32,6 +32,25 @@ for mode in none zero_after zero_all noise_after patch_after; do
     --eval-checkpoint results/runs/ombria/multimodal_none_seed7/best_model.pt
 done
 
+python scripts/train_ombria_unet.py \
+  --root "$ROOT" \
+  --variant multimodal \
+  --train-degrade-s2 modality_dropout \
+  --epochs "$EPOCHS" \
+  --batch-size "$BATCH_SIZE" \
+  --base-channels "$BASE_CHANNELS"
+
+for mode in none zero_after zero_all noise_after patch_after; do
+  python scripts/train_ombria_unet.py \
+    --root "$ROOT" \
+    --variant multimodal \
+    --degrade-s2 "$mode" \
+    --train-degrade-s2 modality_dropout \
+    --batch-size "$BATCH_SIZE" \
+    --base-channels "$BASE_CHANNELS" \
+    --eval-checkpoint results/runs/ombria/multimodal_none_train-modality_dropout_seed7/best_model.pt
+done
+
 python scripts/summarize_ombria_runs.py \
   --runs-dir results/runs/ombria \
   --out results/tables/ombria_run_summary.csv
@@ -41,4 +60,3 @@ python scripts/plot_ombria_results.py \
   --out-md results/tables/ombria_results_table.md
 
 cat results/tables/ombria_results_table.md
-

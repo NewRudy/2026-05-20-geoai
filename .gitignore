@@ -21,6 +21,8 @@ external/**
 !results/tables/
 !results/figures/.gitkeep
 !results/tables/.gitkeep
+!results/tables/ombria_run_summary.csv
+!results/tables/ombria_results_table.md
 
 # Credentials and local config
 .env

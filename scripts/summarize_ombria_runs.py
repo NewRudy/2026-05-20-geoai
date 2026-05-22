@@ -34,6 +34,7 @@ def main() -> None:
             "run": run_dir.name,
             "variant": config.get("variant", ""),
             "degrade_s2": config.get("degrade_s2", ""),
+            "train_degrade_s2": config.get("train_degrade_s2", "none"),
             "seed": config.get("seed", ""),
             "epochs": config.get("epochs", ""),
             "batch_size": config.get("batch_size", ""),
@@ -66,4 +67,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

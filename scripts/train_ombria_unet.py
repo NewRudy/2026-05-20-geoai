@@ -23,11 +23,30 @@ from geoai_quickpaper.ombria import (  # noqa: E402
 )
 
 
+TRAIN_S2_DEGRADATIONS = ("none", "modality_dropout")
+
+
+def choose_train_degrade_s2(mode: str, rng: np.random.Generator) -> str:
+    if mode == "none":
+        return "none"
+    if mode == "modality_dropout":
+        return str(
+            rng.choice(
+                ["none", "zero_after", "zero_all", "noise_after", "patch_after"],
+                p=[0.50, 0.20, 0.10, 0.10, 0.10],
+            )
+        )
+    raise ValueError(
+        f"Unknown training S2 degradation {mode!r}; choose from {TRAIN_S2_DEGRADATIONS}"
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path("external/OMBRIA"))
     parser.add_argument("--variant", choices=VARIANTS, default="s2_after")
     parser.add_argument("--degrade-s2", default="none")
+    parser.add_argument("--train-degrade-s2", choices=TRAIN_S2_DEGRADATIONS, default="none")
     parser.add_argument("--out-dir", type=Path, default=Path("results/runs/ombria"))
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=8)
@@ -54,12 +73,22 @@ class OmbriaTorchDataset:
         from torch.utils.data import Dataset
 
         class _Dataset(Dataset):
+            def __init__(self_inner) -> None:
+                self_inner.calls = 0
+
             def __len__(self_inner) -> int:
                 return len(samples)
 
             def __getitem__(self_inner, idx: int):
-                rng = np.random.default_rng(seed + idx)
-                image, mask = load_sample(samples[idx], variant, degrade_s2, rng)
+                if degrade_s2 == "modality_dropout":
+                    call_id = self_inner.calls
+                    self_inner.calls += 1
+                    rng = np.random.default_rng(seed + idx + call_id * 1_000_003)
+                    sample_degrade_s2 = choose_train_degrade_s2(degrade_s2, rng)
+                else:
+                    rng = np.random.default_rng(seed + idx)
+                    sample_degrade_s2 = degrade_s2
+                image, mask = load_sample(samples[idx], variant, sample_degrade_s2, rng)
                 x = torch.from_numpy(np.moveaxis(image, 2, 0))
                 y = torch.from_numpy(mask[None, :, :])
                 return x, y
@@ -185,6 +214,9 @@ def evaluate(model, loader, device) -> dict[str, float]:
 
 def main() -> None:
     args = parse_args()
+    if args.train_degrade_s2 != "none" and args.variant != "multimodal":
+        raise ValueError("--train-degrade-s2 is only supported for --variant multimodal")
+
     train_all = collect_ombria_samples(args.root, "train")
     test_samples = collect_ombria_samples(args.root, "test")
     train_samples, val_samples = split_train_val(
@@ -211,7 +243,8 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = build_model(variant_channels(args.variant), args.base_channels).to(device)
-    run_dir = args.out_dir / f"{args.variant}_{args.degrade_s2}_seed{args.seed}"
+    train_suffix = "" if args.train_degrade_s2 == "none" else f"_train-{args.train_degrade_s2}"
+    run_dir = args.out_dir / f"{args.variant}_{args.degrade_s2}{train_suffix}_seed{args.seed}"
     run_dir.mkdir(parents=True, exist_ok=True)
     with (run_dir / "config.json").open("w") as f:
         json.dump(vars(args), f, indent=2, default=str)
@@ -230,6 +263,7 @@ def main() -> None:
             "checkpoint": str(args.eval_checkpoint),
             "variant": args.variant,
             "degrade_s2": args.degrade_s2,
+            "train_degrade_s2": args.train_degrade_s2,
             **{f"test_{key}": value for key, value in test.items()},
         }
         with (run_dir / "eval_metrics.json").open("w") as f:
@@ -237,7 +271,9 @@ def main() -> None:
         print(json.dumps(out, sort_keys=True))
         return
 
-    train_ds = OmbriaTorchDataset(train_samples, args.variant, "none", args.seed).dataset
+    train_ds = OmbriaTorchDataset(
+        train_samples, args.variant, args.train_degrade_s2, args.seed
+    ).dataset
     val_ds = OmbriaTorchDataset(val_samples, args.variant, "none", args.seed).dataset
 
     train_loader = DataLoader(

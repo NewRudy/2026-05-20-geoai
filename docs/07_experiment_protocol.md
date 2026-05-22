@@ -66,6 +66,15 @@ Pilot baseline:
 
 - Small U-Net implemented in `scripts/train_ombria_unet.py`.
 
+Method-extension baseline:
+
+- The same multimodal U-Net trained with `--train-degrade-s2 modality_dropout`.
+- Each training sample is randomly left clean or given zeroed, noisy, or
+  patch-masked S2 inputs while S1 remains available.
+- This is intentionally lightweight: it tests whether a simple training-time
+  modality stressor improves inference-time robustness without introducing a
+  large architecture or a new dataset.
+
 Input variants:
 
 - `s1_after`: S1 after-event only, 1 channel.
@@ -126,6 +135,8 @@ The direction is viable if:
 3. Inference-time S2 degradation causes a consistent and interpretable change in
    multimodal performance.
 4. Results can be regenerated from committed configs and logs.
+5. The modality-dropout multimodal baseline improves degraded-mode performance
+   without destroying clean performance.
 
 The direction is weak if:
 

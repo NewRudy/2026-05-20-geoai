@@ -4,7 +4,7 @@ Date: 2026-05-21
 
 ## Current Decision
 
-Proceed with the OMBRIA route for a cloud U-Net pilot.
+Proceed with the OMBRIA route for a robustness-focused cloud U-Net pilot.
 
 This is not yet a full manuscript go decision. It is a go decision for the next
 experimental stage because the data, code path, literature rationale, and
@@ -37,6 +37,16 @@ Local sanity baselines:
 - These are not manuscript results because they are simplistic and one local run
   produced numerical warnings. They are only route-validation evidence.
 
+Cloud pilot signal:
+
+- A Colab/T4 short run completed the five clean input variants and multimodal S2
+  degradation evaluations.
+- The visible summary showed clean multimodal as the strongest run and a
+  systematic performance drop under synthetic S2 degradation.
+- This is enough to continue the route, but not yet enough for manuscript
+  results because the exact CSV/log artifacts still need to be copied back and
+  committed as curated tables.
+
 Literature rationale:
 
 - OmbriaNet provides the base supervised S1/S2 flood mapping paper.
@@ -66,14 +76,16 @@ Before writing the results section:
    retraining.
 3. Metrics must be saved from committed scripts and fixed configs.
 4. At least one figure/table must show a consistent clean-vs-degraded pattern.
+5. A lightweight modality-dropout multimodal checkpoint should be evaluated as a
+   robustness baseline.
 
 ## Current Blockers
 
 GitHub:
 
 - SSH authentication works for `NewRudy`.
-- Push failed because `NewRudy/2026-05-20-geoai` does not exist yet.
-- Once that empty repository exists, current `origin` can push directly.
+- `NewRudy/2026-05-20-geoai` exists and `main` has been pushed.
+- Current `origin` is `git@github.com:NewRudy/2026-05-20-geoai.git`.
 
 Cloud execution:
 
@@ -90,4 +102,3 @@ Switch to one of these smaller fallback routes:
 2. Switch to FLOODPY/FLOMPY and write a Sentinel-1 SAR flood mapping case-study
    paper, accepting more preprocessing complexity.
 3. Return to Sen1Floods11 only if paid/guaranteed GPU becomes available.
-
