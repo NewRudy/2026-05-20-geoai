@@ -23,17 +23,27 @@ from geoai_quickpaper.ombria import (  # noqa: E402
 )
 
 
-TRAIN_S2_DEGRADATIONS = ("none", "modality_dropout")
+TRAIN_S2_DEGRADATIONS = (
+    "none",
+    "modality_dropout",
+    "modality_dropout_light",
+    "modality_dropout_patch",
+)
 
 
 def choose_train_degrade_s2(mode: str, rng: np.random.Generator) -> str:
     if mode == "none":
         return "none"
-    if mode == "modality_dropout":
+    schedules = {
+        "modality_dropout": [0.50, 0.20, 0.10, 0.10, 0.10],
+        "modality_dropout_light": [0.65, 0.12, 0.08, 0.08, 0.07],
+        "modality_dropout_patch": [0.50, 0.15, 0.10, 0.10, 0.15],
+    }
+    if mode in schedules:
         return str(
             rng.choice(
                 ["none", "zero_after", "zero_all", "noise_after", "patch_after"],
-                p=[0.50, 0.20, 0.10, 0.10, 0.10],
+                p=schedules[mode],
             )
         )
     raise ValueError(

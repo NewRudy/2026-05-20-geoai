@@ -13,6 +13,18 @@ LABELS = {
     "zero_after": "After S2 missing",
     "zero_all": "All S2 missing",
 }
+TRAIN_LABELS = {
+    "none": "Clean training",
+    "modality_dropout": "Modality dropout",
+    "modality_dropout_light": "Light dropout",
+    "modality_dropout_patch": "Patch-aware dropout",
+}
+COLORS = {
+    "none": "#1f77b4",
+    "modality_dropout": "#d62728",
+    "modality_dropout_light": "#2ca02c",
+    "modality_dropout_patch": "#9467bd",
+}
 
 
 def as_float(value: str | None) -> float | None:
@@ -38,6 +50,17 @@ def metric_series(
     ]
 
 
+def train_modes(rows: list[dict[str, str]]) -> list[str]:
+    observed = {row.get("train_degrade_s2", "none") or "none" for row in rows}
+    order = (
+        "none",
+        "modality_dropout",
+        "modality_dropout_light",
+        "modality_dropout_patch",
+    )
+    return [mode for mode in order if mode in observed]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -59,15 +82,21 @@ def main() -> None:
         return
 
     x = list(range(len(DEGRADATION_ORDER)))
+    modes = train_modes(rows)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=False)
     for ax, metric, title in [
         (axes[0], "test_iou", "Flood IoU"),
         (axes[1], "test_f1", "Flood F1"),
     ]:
-        clean = metric_series(rows, "none", metric)
-        robust = metric_series(rows, "modality_dropout", metric)
-        ax.plot(x, clean, marker="o", label="Clean training", linewidth=2)
-        ax.plot(x, robust, marker="s", label="Modality dropout", linewidth=2)
+        for mode in modes:
+            ax.plot(
+                x,
+                metric_series(rows, mode, metric),
+                marker="o" if mode == "none" else "s",
+                label=TRAIN_LABELS.get(mode, mode),
+                linewidth=2,
+                color=COLORS.get(mode),
+            )
         ax.set_title(title)
         ax.set_xticks(x)
         ax.set_xticklabels(
@@ -94,6 +123,7 @@ def plot_with_pillow(rows: list[dict[str, str]], out: Path) -> None:
 
     image = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(image)
+    modes = train_modes(rows)
 
     def draw_panel(x0: int, metric: str, title: str) -> None:
         y0 = margin_top
@@ -108,15 +138,15 @@ def plot_with_pillow(rows: list[dict[str, str]], out: Path) -> None:
             draw.text((x0 - 38, y - 7), f"{value:.1f}", fill=(80, 80, 80))
 
         series = [
-            ("Clean training", metric_series(rows, "none", metric), (31, 119, 180)),
             (
-                "Modality dropout",
-                metric_series(rows, "modality_dropout", metric),
-                (214, 39, 40),
-            ),
+                TRAIN_LABELS.get(mode, mode),
+                metric_series(rows, mode, metric),
+                tuple(int(COLORS.get(mode, "#333333")[idx : idx + 2], 16) for idx in (1, 3, 5)),
+            )
+            for mode in modes
         ]
         step = panel_width / max(len(DEGRADATION_ORDER) - 1, 1)
-        for label, values, color in series:
+        for series_idx, (label, values, color) in enumerate(series):
             points = []
             for idx, value in enumerate(values):
                 if value is None:
@@ -128,7 +158,7 @@ def plot_with_pillow(rows: list[dict[str, str]], out: Path) -> None:
                 draw.line(points, fill=color, width=3)
             for x, y in points:
                 draw.ellipse([x - 4, y - 4, x + 4, y + 4], fill=color)
-            legend_y = y1 + 70 + (0 if label.startswith("Clean") else 18)
+            legend_y = y1 + 58 + 18 * series_idx
             draw.line([x0, legend_y + 6, x0 + 24, legend_y + 6], fill=color, width=3)
             draw.text((x0 + 30, legend_y), label, fill=(30, 30, 30))
 

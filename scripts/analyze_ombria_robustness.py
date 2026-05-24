@@ -9,7 +9,12 @@ from pathlib import Path
 
 METRICS = ("test_iou", "test_f1", "test_precision", "test_recall")
 DEGRADATION_ORDER = ("none", "patch_after", "noise_after", "zero_after", "zero_all")
-TRAIN_ORDER = ("none", "modality_dropout")
+TRAIN_ORDER = (
+    "none",
+    "modality_dropout",
+    "modality_dropout_light",
+    "modality_dropout_patch",
+)
 
 
 def as_float(value: str | None) -> float | None:
@@ -88,7 +93,7 @@ def add_deltas(summary: list[dict[str, str]]) -> list[dict[str, str]]:
     output: list[dict[str, str]] = []
     for row in summary:
         record = dict(row)
-        if row["train_degrade_s2"] == "modality_dropout":
+        if row["train_degrade_s2"] != "none":
             clean = by_mode.get((row["degrade_s2"], "none"))
             if clean is not None:
                 for metric in METRICS:
@@ -141,11 +146,11 @@ def write_markdown(rows: list[dict[str, str]], path: Path) -> None:
     path.write_text("\n".join(lines) + "\n")
 
 
-def robustness_verdict(rows: list[dict[str, str]]) -> str:
+def _verdict_for_mode(rows: list[dict[str, str]], train_mode: str) -> str:
     robust_rows = [
         row
         for row in rows
-        if row.get("train_degrade_s2") == "modality_dropout"
+        if row.get("train_degrade_s2") == train_mode
         and row.get("degrade_s2") != "none"
     ]
     deltas = [
@@ -157,7 +162,7 @@ def robustness_verdict(rows: list[dict[str, str]]) -> str:
         (
             row
             for row in rows
-            if row.get("train_degrade_s2") == "modality_dropout"
+            if row.get("train_degrade_s2") == train_mode
             and row.get("degrade_s2") == "none"
         ),
         None,
@@ -169,11 +174,11 @@ def robustness_verdict(rows: list[dict[str, str]]) -> str:
     if observed and all(value > 0 for value in observed):
         if clean_delta is not None and clean_delta >= -0.05:
             return (
-                "Go: modality-dropout training improves all tested degraded "
+                f"Go: {train_mode} training improves all tested degraded "
                 "Sentinel-2 conditions while keeping the clean IoU penalty within 0.05."
             )
         return (
-            "Borderline go: degraded-condition gains are consistent, but the clean "
+            f"Borderline go: {train_mode} gains are consistent, but the clean "
             "condition penalty should be discussed or reduced."
         )
     if observed and sum(value > 0 for value in observed) >= max(1, len(observed) - 1):
@@ -182,9 +187,23 @@ def robustness_verdict(rows: list[dict[str, str]]) -> str:
             "case needs inspection before this is a manuscript claim."
         )
     return (
-        "No-go from current summary: the robust training signal is not consistent "
-        "enough yet. Rerun or switch direction."
+        f"No-go for {train_mode}: the robust training signal is not consistent "
+        "enough yet."
     )
+
+
+def robustness_verdict(rows: list[dict[str, str]]) -> str:
+    train_modes = [
+        mode
+        for mode in TRAIN_ORDER
+        if mode != "none" and any(row.get("train_degrade_s2") == mode for row in rows)
+    ]
+    if not train_modes:
+        return "No robust-training rows found."
+    verdicts = [_verdict_for_mode(rows, train_mode) for train_mode in train_modes]
+    if len(verdicts) == 1:
+        return verdicts[0]
+    return "\n".join(f"- {verdict}" for verdict in verdicts)
 
 
 def main() -> None:

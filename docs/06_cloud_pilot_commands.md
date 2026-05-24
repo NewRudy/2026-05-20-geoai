@@ -157,3 +157,29 @@ EPOCHS=15 bash scripts/run_ombria_final_matrix.sh
 
 Do not reduce to one seed for manuscript results unless the paper explicitly
 frames the experiment as a pilot or short communication.
+
+## Focused Follow-Up Matrix
+
+The final matrix showed a strong missing/corrupted-S2 robustness signal, but it
+also showed a clean-performance penalty and a slight `patch_after` failure. Run
+this small follow-up before writing the final results section:
+
+```bash
+bash scripts/run_ombria_followup_matrix.sh
+```
+
+Default settings:
+
+- same seeds as the final matrix: `7 13 21`
+- same 25-epoch lightweight U-Net
+- two extra training schedules:
+  - `modality_dropout_light`: lower total S2 degradation probability
+  - `modality_dropout_patch`: slightly higher patch-masking probability
+
+The command writes:
+
+- `results/tables/ombria_followup_run_summary.csv`
+- `results/tables/ombria_followup_robustness_summary.csv`
+- `results/tables/ombria_followup_robustness_summary.md`
+- `results/figures/ombria_followup_robustness.png`
+- `results/ombria_followup_artifacts.zip`

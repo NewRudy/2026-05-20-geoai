@@ -1,15 +1,16 @@
 # Feasibility Decision
 
-Date: 2026-05-21
+Date: 2026-05-24
 
 ## Current Decision
 
-Proceed with the OMBRIA route for a robustness-focused cloud U-Net pilot.
+Proceed with the OMBRIA route, but keep the claim narrow.
 
-This is now a manuscript-route go decision, but not yet a final-results
-decision. The Colab/T4 robustness readout shows the expected clean-performance
-versus degradation-robustness tradeoff, so the paper direction is worth
-developing into a full experiment set.
+This is a borderline-go decision rather than a clean final-results decision.
+The Colab/T4 multi-seed matrix shows a strong signal for missing/corrupted S2
+robustness, but also shows a clean-condition penalty and a slight patch-masking
+failure. The project remains worth continuing because the failure is specific,
+diagnosable, and can be tested with a small follow-up schedule ablation.
 
 ## Evidence Collected
 
@@ -44,13 +45,16 @@ Cloud pilot signal:
   degradation evaluations.
 - The visible summary showed clean multimodal as the strongest run and a
   systematic performance drop under synthetic S2 degradation.
-- A second Colab/T4 robustness readout completed 14 records, including a
-  modality-dropout-trained multimodal checkpoint.
-- The robust checkpoint improved every tested S2 degradation condition while
-  causing only a small clean-condition drop.
-- This is enough to continue as a manuscript route, but not yet enough for final
-  manuscript results because the exact CSV/log artifacts still need to be copied
-  back and committed as curated tables.
+- A final Colab/T4 matrix completed clean and modality-dropout multimodal
+  checkpoints for seeds `7`, `13`, and `21`.
+- The artifacts were copied back into `results/tables` and `results/figures`.
+- Modality dropout strongly improves all-S2-missing evaluation (`zero_all`:
+  IoU `+0.2698`, F1 `+0.3728`) and improves noisy S2 evaluation
+  (`noise_after`: IoU `+0.0780`, F1 `+0.0888`).
+- The same strategy slightly hurts patch-masked S2 evaluation
+  (`patch_after`: IoU `-0.0106`, F1 `-0.0049`) and reduces clean IoU by
+  `0.0552`.
+- This supports a robustness-tradeoff paper, not a universal robustness claim.
 
 Literature rationale:
 
@@ -72,18 +76,22 @@ Potential manuscript claim:
 
 This is modest but defensible.
 
+More precise current claim:
+
+> Lightweight S2 degradation during training improves OMBRIA flood mapping
+> robustness when optical inputs are absent or corrupted, but the benefit is
+> degradation-specific and trades off against clean optical performance.
+
 ## What Must Still Be Proven
 
 Before writing the results section:
 
-1. Cloud U-Net runs must complete for all five clean input variants.
-2. A clean multimodal checkpoint must be evaluated under S2 degradation without
-   retraining.
-3. Metrics must be saved from committed scripts and fixed configs.
-4. At least one figure/table must show a consistent clean-vs-degraded pattern.
-5. A lightweight modality-dropout multimodal checkpoint should be evaluated as a
-   robustness baseline. A first short Colab readout has done this; repeat it
-   with exact exported artifacts, multiple seeds, and final settings.
+1. Inspect the qualitative panels for the patch-masking failure.
+2. Run `scripts/run_ombria_followup_matrix.sh` to test lighter dropout and
+   patch-aware dropout schedules.
+3. Confirm whether either schedule reduces the clean IoU penalty below about
+   `0.05` while preserving missing/noisy-S2 gains.
+4. Only then freeze the method section and start the results narrative.
 
 ## Current Blockers
 
@@ -95,9 +103,9 @@ GitHub:
 
 Cloud execution:
 
-- No direct Colab/Kaggle execution API is available in the current tool context.
-- Browser automation is not currently exposed enough to run Colab unattended.
-- A ready-to-run notebook exists at `notebooks/ombria_cloud_pilot.ipynb`.
+- Colab/T4 execution works for this project.
+- The Mac mini is not the right place for the U-Net training loop; keep local
+  work to code, tables, figures, and manuscript writing.
 
 ## If Cloud U-Net Fails
 
