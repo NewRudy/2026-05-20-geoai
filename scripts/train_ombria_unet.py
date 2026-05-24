@@ -259,8 +259,17 @@ def main() -> None:
     if args.eval_checkpoint is not None:
         model.load_state_dict(torch.load(args.eval_checkpoint, map_location=device))
         test = evaluate(model, test_loader, device)
+        checkpoint_config_path = args.eval_checkpoint.parent / "config.json"
+        checkpoint_config = {}
+        if checkpoint_config_path.exists():
+            with checkpoint_config_path.open() as f:
+                checkpoint_config = json.load(f)
         out = {
             "checkpoint": str(args.eval_checkpoint),
+            "checkpoint_base_channels": checkpoint_config.get("base_channels"),
+            "checkpoint_batch_size": checkpoint_config.get("batch_size"),
+            "checkpoint_epochs": checkpoint_config.get("epochs"),
+            "checkpoint_train_degrade_s2": checkpoint_config.get("train_degrade_s2"),
             "variant": args.variant,
             "degrade_s2": args.degrade_s2,
             "train_degrade_s2": args.train_degrade_s2,

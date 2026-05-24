@@ -6,9 +6,10 @@ Date: 2026-05-21
 
 Proceed with the OMBRIA route for a robustness-focused cloud U-Net pilot.
 
-This is not yet a full manuscript go decision. It is a go decision for the next
-experimental stage because the data, code path, literature rationale, and
-sanity-check signal are all present.
+This is now a manuscript-route go decision, but not yet a final-results
+decision. The Colab/T4 robustness readout shows the expected clean-performance
+versus degradation-robustness tradeoff, so the paper direction is worth
+developing into a full experiment set.
 
 ## Evidence Collected
 
@@ -43,9 +44,13 @@ Cloud pilot signal:
   degradation evaluations.
 - The visible summary showed clean multimodal as the strongest run and a
   systematic performance drop under synthetic S2 degradation.
-- This is enough to continue the route, but not yet enough for manuscript
-  results because the exact CSV/log artifacts still need to be copied back and
-  committed as curated tables.
+- A second Colab/T4 robustness readout completed 14 records, including a
+  modality-dropout-trained multimodal checkpoint.
+- The robust checkpoint improved every tested S2 degradation condition while
+  causing only a small clean-condition drop.
+- This is enough to continue as a manuscript route, but not yet enough for final
+  manuscript results because the exact CSV/log artifacts still need to be copied
+  back and committed as curated tables.
 
 Literature rationale:
 
@@ -77,7 +82,8 @@ Before writing the results section:
 3. Metrics must be saved from committed scripts and fixed configs.
 4. At least one figure/table must show a consistent clean-vs-degraded pattern.
 5. A lightweight modality-dropout multimodal checkpoint should be evaluated as a
-   robustness baseline.
+   robustness baseline. A first short Colab readout has done this; repeat it
+   with exact exported artifacts, multiple seeds, and final settings.
 
 ## Current Blockers
 

@@ -26,6 +26,12 @@ The first Colab/T4 pilot completed one short run set with 9 summary records:
 
 The next minimal contribution is to train one additional multimodal checkpoint using `--train-degrade-s2 modality_dropout` and compare clean-vs-degraded performance against the standard clean-trained multimodal checkpoint.
 
+That follow-up has now completed in Colab as a 14-record readout. Rounded values
+from the visible output show the modality-dropout checkpoint improving all
+tested S2 degradation modes while reducing clean IoU only slightly. Treat this
+as a manuscript-route go signal, but still export the exact CSV before citing
+numbers as final results.
+
 Earlier planning also considered Sen1Floods11 and foundation-model PEFT. Keep those notes as fallback or expansion material, but do not treat them as the active route unless the project direction is changed explicitly.
 
 ## Important Files
@@ -51,6 +57,6 @@ Earlier planning also considered Sen1Floods11 and foundation-model PEFT. Keep th
 
 - Run the modality-dropout robust multimodal baseline from `docs/06_cloud_pilot_commands.md`.
 - Export or copy back `results/tables/ombria_run_summary.csv` and `results/tables/ombria_results_table.md` from Colab.
-- Decide whether results support the OMBRIA manuscript route.
+- Repeat the robust baseline with multiple seeds and final epoch settings.
 - If continuing, add qualitative maps and per-chip failure analysis.
 - If not, switch to a smaller fallback or return to the Sen1Floods11/foundation-model route.

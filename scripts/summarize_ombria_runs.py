@@ -45,6 +45,14 @@ def main() -> None:
         if eval_path.exists():
             with eval_path.open() as f:
                 metrics = json.load(f)
+            if metrics.get("checkpoint_epochs") is not None:
+                record["epochs"] = metrics["checkpoint_epochs"]
+            if metrics.get("checkpoint_batch_size") is not None:
+                record["batch_size"] = metrics["checkpoint_batch_size"]
+            if metrics.get("checkpoint_base_channels") is not None:
+                record["base_channels"] = metrics["checkpoint_base_channels"]
+            if metrics.get("checkpoint_train_degrade_s2") is not None:
+                record["train_degrade_s2"] = metrics["checkpoint_train_degrade_s2"]
             for key, value in metrics.items():
                 if key.startswith("test_"):
                     record[key] = value
