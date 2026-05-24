@@ -120,3 +120,40 @@ Do not use pilot metrics as final manuscript results. Final results need:
 - consistent clean training,
 - checkpoint reload for inference-time degradation,
 - repeated runs or a clear reason for single-run reporting.
+
+## Final Multi-Seed Matrix
+
+After the short pilot produces a coherent signal, run the repeatable final
+matrix on Colab/T4 or Kaggle GPU:
+
+```bash
+bash scripts/run_ombria_final_matrix.sh
+```
+
+Default settings:
+
+- three seeds: `7 13 21`
+- 25 epochs
+- base channels: `16`
+- clean multimodal checkpoint and modality-dropout multimodal checkpoint
+- five test conditions: clean, patch-masked S2, noisy S2, after-event S2
+  missing, and all S2 missing
+
+The command writes:
+
+- `results/tables/ombria_final_run_summary.csv`
+- `results/tables/ombria_final_results_table.md`
+- `results/tables/ombria_final_robustness_summary.csv`
+- `results/tables/ombria_final_robustness_summary.md`
+- `results/figures/ombria_final_robustness.png`
+- `results/figures/ombria_final_qualitative/*.png`
+- `results/ombria_final_artifacts.zip`
+
+If Colab time is tight, reduce only `EPOCHS` first:
+
+```bash
+EPOCHS=15 bash scripts/run_ombria_final_matrix.sh
+```
+
+Do not reduce to one seed for manuscript results unless the paper explicitly
+frames the experiment as a pilot or short communication.

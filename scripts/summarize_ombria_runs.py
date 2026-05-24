@@ -32,6 +32,7 @@ def main() -> None:
 
         record = {
             "run": run_dir.name,
+            "record_type": "train",
             "variant": config.get("variant", ""),
             "degrade_s2": config.get("degrade_s2", ""),
             "train_degrade_s2": config.get("train_degrade_s2", "none"),
@@ -45,6 +46,7 @@ def main() -> None:
         if eval_path.exists():
             with eval_path.open() as f:
                 metrics = json.load(f)
+            record["record_type"] = "eval"
             if metrics.get("checkpoint_epochs") is not None:
                 record["epochs"] = metrics["checkpoint_epochs"]
             if metrics.get("checkpoint_batch_size") is not None:

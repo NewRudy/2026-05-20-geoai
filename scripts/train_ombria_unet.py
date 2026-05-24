@@ -244,7 +244,11 @@ def main() -> None:
 
     model = build_model(variant_channels(args.variant), args.base_channels).to(device)
     train_suffix = "" if args.train_degrade_s2 == "none" else f"_train-{args.train_degrade_s2}"
-    run_dir = args.out_dir / f"{args.variant}_{args.degrade_s2}{train_suffix}_seed{args.seed}"
+    if args.eval_checkpoint is None:
+        run_name = f"{args.variant}_{args.degrade_s2}{train_suffix}_seed{args.seed}"
+    else:
+        run_name = f"{args.eval_checkpoint.parent.name}_eval-{args.degrade_s2}"
+    run_dir = args.out_dir / run_name
     run_dir.mkdir(parents=True, exist_ok=True)
     with (run_dir / "config.json").open("w") as f:
         json.dump(vars(args), f, indent=2, default=str)

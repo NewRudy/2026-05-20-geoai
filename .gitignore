@@ -23,6 +23,16 @@ external/**
 !results/tables/.gitkeep
 !results/tables/ombria_run_summary.csv
 !results/tables/ombria_results_table.md
+!results/tables/ombria_robustness_summary.csv
+!results/tables/ombria_robustness_summary.md
+!results/tables/ombria_final_run_summary.csv
+!results/tables/ombria_final_results_table.md
+!results/tables/ombria_final_robustness_summary.csv
+!results/tables/ombria_final_robustness_summary.md
+!results/figures/ombria_robustness.png
+!results/figures/ombria_final_robustness.png
+!results/figures/ombria_final_qualitative/
+!results/figures/ombria_final_qualitative/*.png
 
 # Credentials and local config
 .env
