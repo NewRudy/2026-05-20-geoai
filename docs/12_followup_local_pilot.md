@@ -80,3 +80,7 @@ Best candidates for a full Colab/T4 follow-up:
 
 The next cloud run should use three seeds and 25 epochs before making a final
 SCI-paper decision.
+
+The default follow-up script now runs only these two candidates to avoid
+spending cloud time on the patch-focused schedule, which did not improve the
+patch-masking case in this pilot.

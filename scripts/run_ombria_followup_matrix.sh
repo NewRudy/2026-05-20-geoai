@@ -7,7 +7,7 @@ BATCH_SIZE="${BATCH_SIZE:-8}"
 BASE_CHANNELS="${BASE_CHANNELS:-16}"
 SEEDS="${SEEDS:-7 13 21}"
 RUNS_DIR="${RUNS_DIR:-results/runs/ombria_final}"
-TRAIN_MODES="${TRAIN_MODES:-modality_dropout_light modality_dropout_balanced modality_dropout_patch}"
+TRAIN_MODES="${TRAIN_MODES:-modality_dropout_light modality_dropout_balanced}"
 PYTHON="${PYTHON:-python}"
 
 mkdir -p external
