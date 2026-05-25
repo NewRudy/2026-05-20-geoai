@@ -19,13 +19,18 @@
 \begin{abstract}
 Multitemporal Sentinel-1/Sentinel-2 fusion can improve supervised flood mapping,
 but disaster response often faces incomplete or degraded optical observations.
-This study evaluates the sensitivity of flood segmentation models to sensor
-modality availability using the public OMBRIA dataset. We compare Sentinel-1,
-Sentinel-2, bitemporal, and multimodal U-Net-style baselines, then evaluate the
-same multimodal checkpoint under controlled Sentinel-2 degradation at inference
-time. The goal is not to claim a new state-of-the-art flood model, but to
-quantify when fusion remains useful and when reliance on optical inputs becomes a
-failure mode.
+This study evaluates whether clean benchmark evaluation overstates the
+reliability of multimodal flood segmentation when optical inputs are missing or
+corrupted. Using the public OMBRIA dataset, we train lightweight multitemporal
+U-Net baselines and stress-test multimodal checkpoints under controlled
+Sentinel-2 degradation. A simple training-time S2 degradation strategy improves
+robustness when all optical channels are removed (IoU +0.2698, F1 +0.3728) and
+when after-event S2 is replaced by noise (IoU +0.0780, F1 +0.0888), but it
+slightly reduces clean performance (IoU -0.0552) and does not improve the
+patch-masking condition. The results support a robustness-tradeoff view of
+SAR-optical fusion: multimodal models can be made less brittle to missing or
+corrupted optical inputs, but the benefit is degradation-specific and should not
+be reported as universal robustness.
 \end{abstract}
 
 \begin{keyword}
@@ -36,42 +41,214 @@ flood mapping \sep Sentinel-1 \sep Sentinel-2 \sep multimodal fusion \sep optica
 
 \section{Introduction}
 
-Draft after the first completed baseline experiments. The introduction should
-motivate flood mapping, optical cloud limitations, SAR complementarity, and
-modality robustness without claiming operational readiness.
+Rapid flood extent mapping is an important remote-sensing application because
+flood boundaries can change quickly and field observations are often sparse
+during disaster response. Sentinel-1 synthetic aperture radar (SAR) is useful in
+this setting because it can observe the surface through cloud cover, while
+Sentinel-2 optical imagery provides complementary spectral information when the
+scene is observable. Multitemporal SAR-optical fusion is therefore attractive:
+pre-event and post-event observations from both sensors can encode inundation,
+land-cover context, and change information.
+
+However, standard supervised benchmarks usually evaluate models on clean,
+paired inputs. This setting can hide a practical weakness. During real flood
+events, after-event optical imagery may be unavailable, cloud-contaminated,
+partly invalid, or otherwise misaligned with the conditions assumed during
+training. A model that appears strong under clean S1/S2 fusion may therefore be
+less reliable when the optical stream is degraded.
+
+This paper studies that reliability boundary using OMBRIA, a public
+multitemporal Sentinel-1/Sentinel-2 flood mapping dataset introduced with
+OmbriaNet \cite{drakonakis2022ombrianet}. Instead of proposing a large new
+architecture, we ask a narrower question: how much does a lightweight multimodal
+flood segmentation baseline depend on clean Sentinel-2 inputs, and can simple
+training-time optical degradation reduce that dependence?
+
+The contribution is threefold:
+
+\begin{itemize}
+  \item We evaluate multimodal OMBRIA flood segmentation under controlled
+  Sentinel-2 degradation modes, separating clean benchmark performance from
+  degraded-input reliability.
+  \item We test a lightweight S2 degradation training baseline that randomly
+  exposes the model to clean, missing, noisy, and patch-masked optical inputs.
+  \item We report both positive and negative results, showing strong robustness
+  gains for missing/corrupted optical inputs but a measurable clean-performance
+  penalty and a failure to improve the patch-masking case.
+\end{itemize}
 
 \section{Related Work}
 
-Cover OMBRIA and OmbriaNet \cite{drakonakis2022ombrianet}, cross-modal flood
-mapping \cite{garg2023crossmodal}, and incomplete multimodal learning for remote
-sensing \cite{chen2023incomplete}.
+OmbriaNet introduced OMBRIA as a supervised flood mapping benchmark using
+multitemporal Sentinel-1 and Sentinel-2 data fusion
+\cite{drakonakis2022ombrianet}. The dataset and reference experiments make it a
+suitable base for a small, reproducible robustness study because S1 and S2
+imagery are already paired for before-event and after-event observations.
+
+Several studies have examined flood mapping across sensor modalities.
+Cross-modal distillation has been proposed to transfer information between
+optical and SAR flood mapping models \cite{garg2023crossmodal}, reflecting the
+broader observation that each modality has different strengths and failure
+modes. More generally, incomplete multimodal learning for remote sensing studies
+how models should behave when one or more modalities are missing at inference
+time \cite{chen2023incomplete}. Our work is aligned with this literature but
+keeps the method deliberately simple: we test whether basic degradation-aware
+training is enough to reveal and reduce optical-input brittleness in an OMBRIA
+flood mapping setting.
+
+Recent GeoAI and remote-sensing foundation model work has emphasized larger
+pretrained models and generalist Earth observation representations
+\cite{jakubik2023foundation,huang2025survey,marsocci2025terratorch}. Those
+models are important, but the present study focuses on a smaller question that
+can be tested under limited compute: whether conventional multimodal fusion
+evaluation itself is robust to missing or degraded optical channels.
 
 \section{Data}
 
-Describe dataset version, GCS source, labels, bands, invalid masks, splits, and
-event metadata.
+We use the public OMBRIA repository data. The processed subset used here
+contains paired Sentinel-1 and Sentinel-2 before-event and after-event chips for
+624 training chips and 70 test chips. The original training split is divided
+into 530 training chips and 94 validation chips using a fixed random seed. Each
+sample provides before-event S1, after-event S1, before-event S2, after-event
+S2, and a binary flood mask. The multimodal input concatenates S2 before, S2
+after, S1 before, and S1 after channels.
+
+The controlled S2 degradation modes are:
+
+\begin{itemize}
+  \item \textbf{none}: clean S1/S2 input.
+  \item \textbf{zero\_after}: after-event S2 channels are set to zero.
+  \item \textbf{zero\_all}: both before-event and after-event S2 channels are
+  set to zero.
+  \item \textbf{noise\_after}: after-event S2 channels are replaced by random
+  noise.
+  \item \textbf{patch\_after}: after-event S2 is partially masked by zero-valued
+  patches.
+\end{itemize}
 
 \section{Methods}
 
-Describe baselines, foundation-model adaptation, PEFT variants, training
-protocol, and implementation details.
+The segmentation model is a compact U-Net-style convolutional network with
+three encoder blocks, a bottleneck, and three decoder blocks. This architecture
+is intentionally lightweight so that repeated-seed experiments can run on a
+free Colab/T4 GPU. The model is trained with binary cross-entropy on flood masks
+and evaluated using IoU, F1, precision, recall, and accuracy.
+
+The main comparison is between two multimodal training regimes:
+
+\begin{itemize}
+  \item \textbf{Clean training}: all training samples use clean S1/S2 inputs.
+  \item \textbf{S2 degradation training}: each training sample randomly uses
+  clean S2, zeroed after-event S2, zeroed all S2, noisy after-event S2, or
+  patch-masked after-event S2.
+\end{itemize}
+
+Both checkpoints are evaluated under the same test-time degradation modes. This
+design isolates the effect of training-time degradation from the effect of
+test-time optical corruption.
 
 \section{Experimental Design}
 
-Describe in-distribution, cross-event, cross-region, and low-label settings.
-Define metrics before reporting results.
+The current experiment uses three seeds: 7, 13, and 21. Each model is trained
+for 25 epochs with batch size 8 and 16 base channels. For each seed, a clean
+multimodal checkpoint and an S2-degradation-trained multimodal checkpoint are
+trained. Each checkpoint is then reloaded and evaluated under the five S2
+conditions listed above.
+
+The primary metrics are mean test IoU and mean test F1 across the three seeds.
+We report the difference between S2 degradation training and clean training for
+each test condition. Positive values indicate that degradation-aware training
+improves robustness under that condition.
 
 \section{Results}
 
-Only insert metrics generated by committed configs and logs.
+Table~\ref{tab:robustness} summarizes the final matrix. Clean training performs
+best on clean inputs, with mean IoU 0.6890 and mean F1 0.8092. S2 degradation
+training reduces clean IoU by 0.0552 and clean F1 by 0.0418, showing a
+non-negligible accuracy cost.
+
+The same training strategy is beneficial when S2 is missing or strongly
+corrupted. Under \texttt{zero\_all}, clean training nearly collapses
+(IoU 0.0406), while S2 degradation training reaches IoU 0.3104. Under
+\texttt{noise\_after}, IoU improves from 0.3285 to 0.4065. Under
+\texttt{zero\_after}, the gain is smaller but still positive.
+
+The patch-masking result is the important negative case. Under
+\texttt{patch\_after}, S2 degradation training slightly lowers IoU from 0.5722
+to 0.5616. Therefore, the current result does not justify a claim of universal
+robustness across optical degradation types.
+
+\begin{table}[t]
+\centering
+\caption{OMBRIA multimodal flood mapping robustness under controlled
+Sentinel-2 degradation. Values are mean and standard deviation across three
+seeds. Delta is computed relative to clean multimodal training under the same
+test condition.}
+\label{tab:robustness}
+\begin{tabular}{llrrrrrr}
+\toprule
+Test S2 degradation & Training & n & IoU & IoU std & F1 & F1 std & $\Delta$ IoU \\
+\midrule
+none & clean & 3 & 0.6890 & 0.0066 & 0.8092 & 0.0054 & -- \\
+none & S2 degradation & 3 & 0.6338 & 0.0201 & 0.7674 & 0.0170 & -0.0552 \\
+patch\_after & clean & 3 & 0.5722 & 0.0160 & 0.7141 & 0.0164 & -- \\
+patch\_after & S2 degradation & 3 & 0.5616 & 0.0365 & 0.7092 & 0.0325 & -0.0106 \\
+noise\_after & clean & 3 & 0.3285 & 0.0837 & 0.4804 & 0.0894 & -- \\
+noise\_after & S2 degradation & 3 & 0.4065 & 0.0175 & 0.5692 & 0.0195 & +0.0780 \\
+zero\_after & clean & 3 & 0.4052 & 0.0186 & 0.5601 & 0.0133 & -- \\
+zero\_after & S2 degradation & 3 & 0.4383 & 0.0328 & 0.5995 & 0.0322 & +0.0331 \\
+zero\_all & clean & 3 & 0.0406 & 0.0266 & 0.0725 & 0.0460 & -- \\
+zero\_all & S2 degradation & 3 & 0.3104 & 0.0743 & 0.4453 & 0.0935 & +0.2698 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../results/figures/ombria_final_robustness.png}
+\caption{Mean IoU and F1 across clean and degraded S2 test conditions. S2
+degradation training improves missing/noisy optical conditions but reduces clean
+performance and does not improve the patch-masking condition.}
+\label{fig:robustness}
+\end{figure}
 
 \section{Discussion}
 
-Discuss practical value, failure modes, compute tradeoffs, and limitations.
+The results support the central premise that clean multimodal benchmark
+evaluation can overstate practical reliability. Clean S1/S2 fusion is effective
+when all modalities are available, but performance can drop sharply when optical
+channels are removed or corrupted. A simple degradation-aware training schedule
+partly mitigates this brittleness, especially when the model must fall back to
+S1 information after S2 removal.
+
+The clean-performance penalty matters. A method that improves degraded
+conditions by sacrificing too much clean accuracy may not be desirable when
+high-quality optical imagery is available. The current penalty is slightly above
+the planned 0.05 IoU threshold, so the result should be framed as a tradeoff
+rather than a finished robust-fusion solution.
+
+The patch-masking failure suggests that the schedule does not yet teach the
+model to handle local optical occlusion as effectively as global missingness or
+random corruption. A focused follow-up should test lighter degradation schedules
+to reduce the clean penalty and patch-aware schedules to address local
+occlusion.
+
+This study is also limited by its single-dataset scope and synthetic
+degradation design. The degradation modes are controlled and reproducible, but
+they are not a full physical simulation of cloud cover, atmospheric effects, or
+sensor-specific invalid observations. Future work should evaluate event-level
+generalization and real optical quality masks when available.
 
 \section{Conclusion}
 
-Summarize evidence-backed findings.
+This work provides an initial robustness-tradeoff analysis of multitemporal
+Sentinel-1/Sentinel-2 flood mapping on OMBRIA. S2 degradation training improves
+model behavior when optical inputs are missing or corrupted, especially when all
+S2 channels are removed, but it reduces clean performance and does not improve a
+patch-masking stress test. The current evidence is strong enough to continue the
+paper route, provided that the final claim remains specific: robustness gains
+are real for missing/corrupted optical inputs, but they are not universal across
+all degradation types.
 
 \bibliographystyle{elsarticle-num}
 \bibliography{../references/paper}

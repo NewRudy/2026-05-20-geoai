@@ -19,7 +19,8 @@ Science, and the journal's official page immediately before submission.
 
 - Current section page lists relevant open special issues, including machine
   learning/GeoAI for environmental monitoring with a 2026-09-30 deadline.
-- Fit: remote sensing segmentation and foundation-model adaptation.
+- Fit: remote sensing segmentation, SAR-optical fusion, and robustness
+  evaluation.
 - Risk: higher bar and often expects stronger experiments.
 - Source: https://www.mdpi.com/journal/remotesensing/sections/environmental_remote_sensing
 
@@ -59,9 +60,11 @@ Science, and the journal's official page immediately before submission.
 Start with the SCI manuscript structure, but keep a conference-short fallback.
 The best speed/rigor tradeoff is:
 
-1. Build the paper around Sen1Floods11 + PEFT + cross-region evaluation.
-2. If results are strong: submit to Remote Sensing or ISPRS IJGI.
-3. If novelty is moderate but clean: submit to Land special issue or similar
+1. Build the paper around OMBRIA S1/S2 fusion robustness under controlled
+   Sentinel-2 degradation.
+2. If the follow-up matrix reduces the clean penalty or fixes the patch-masking
+   failure: submit to Remote Sensing or ISPRS IJGI.
+3. If novelty remains moderate but the evidence is clean: submit to Land,
+   Remote Sensing Applications, or a similar
    Q3-or-above SCI target after quartile verification.
 4. If experiments are delayed: submit a SIGSPATIAL short/demo first, then extend.
-
