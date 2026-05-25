@@ -7,19 +7,20 @@ BATCH_SIZE="${BATCH_SIZE:-8}"
 BASE_CHANNELS="${BASE_CHANNELS:-16}"
 SEEDS="${SEEDS:-7 13 21}"
 RUNS_DIR="${RUNS_DIR:-results/runs/ombria_final}"
-TRAIN_MODES="${TRAIN_MODES:-modality_dropout_light modality_dropout_patch}"
+TRAIN_MODES="${TRAIN_MODES:-modality_dropout_light modality_dropout_balanced modality_dropout_patch}"
+PYTHON="${PYTHON:-python}"
 
 mkdir -p external
 if [ ! -d "$ROOT" ]; then
   git clone --depth 1 https://github.com/geodrak/OMBRIA.git "$ROOT"
 fi
 
-python scripts/train_ombria_unet.py --root "$ROOT" --variant multimodal --dry-run
+"$PYTHON" scripts/train_ombria_unet.py --root "$ROOT" --variant multimodal --dry-run
 
 for seed in $SEEDS; do
   clean_checkpoint="$RUNS_DIR/multimodal_none_seed${seed}/best_model.pt"
   if [ ! -f "$clean_checkpoint" ]; then
-    python scripts/train_ombria_unet.py \
+    "$PYTHON" scripts/train_ombria_unet.py \
       --root "$ROOT" \
       --out-dir "$RUNS_DIR" \
       --variant multimodal \
@@ -29,10 +30,22 @@ for seed in $SEEDS; do
       --seed "$seed"
   fi
 
+  for mode in none zero_after zero_all noise_after patch_after; do
+    "$PYTHON" scripts/train_ombria_unet.py \
+      --root "$ROOT" \
+      --out-dir "$RUNS_DIR" \
+      --variant multimodal \
+      --degrade-s2 "$mode" \
+      --batch-size "$BATCH_SIZE" \
+      --base-channels "$BASE_CHANNELS" \
+      --seed "$seed" \
+      --eval-checkpoint "$clean_checkpoint"
+  done
+
   for train_mode in $TRAIN_MODES; do
     robust_checkpoint="$RUNS_DIR/multimodal_none_train-${train_mode}_seed${seed}/best_model.pt"
     if [ ! -f "$robust_checkpoint" ]; then
-      python scripts/train_ombria_unet.py \
+      "$PYTHON" scripts/train_ombria_unet.py \
         --root "$ROOT" \
         --out-dir "$RUNS_DIR" \
         --variant multimodal \
@@ -44,7 +57,7 @@ for seed in $SEEDS; do
     fi
 
     for mode in none zero_after zero_all noise_after patch_after; do
-      python scripts/train_ombria_unet.py \
+      "$PYTHON" scripts/train_ombria_unet.py \
         --root "$ROOT" \
         --out-dir "$RUNS_DIR" \
         --variant multimodal \
@@ -58,20 +71,20 @@ for seed in $SEEDS; do
   done
 done
 
-python scripts/summarize_ombria_runs.py \
+"$PYTHON" scripts/summarize_ombria_runs.py \
   --runs-dir "$RUNS_DIR" \
   --out results/tables/ombria_followup_run_summary.csv
 
-python scripts/analyze_ombria_robustness.py \
+"$PYTHON" scripts/analyze_ombria_robustness.py \
   --summary results/tables/ombria_followup_run_summary.csv \
   --out-csv results/tables/ombria_followup_robustness_summary.csv \
   --out-md results/tables/ombria_followup_robustness_summary.md
 
-python scripts/plot_ombria_robustness.py \
+"$PYTHON" scripts/plot_ombria_robustness.py \
   --summary results/tables/ombria_followup_robustness_summary.csv \
   --out results/figures/ombria_followup_robustness.png
 
-python - <<'PY'
+"$PYTHON" - <<'PY'
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 

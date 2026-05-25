@@ -13,6 +13,7 @@ TRAIN_ORDER = (
     "none",
     "modality_dropout",
     "modality_dropout_light",
+    "modality_dropout_balanced",
     "modality_dropout_patch",
 )
 
@@ -183,8 +184,9 @@ def _verdict_for_mode(rows: list[dict[str, str]], train_mode: str) -> str:
         )
     if observed and sum(value > 0 for value in observed) >= max(1, len(observed) - 1):
         return (
-            "Borderline: most degraded conditions improve, but at least one failure "
-            "case needs inspection before this is a manuscript claim."
+            f"Borderline for {train_mode}: most degraded conditions improve, "
+            "but at least one failure case needs inspection before this is a "
+            "manuscript claim."
         )
     return (
         f"No-go for {train_mode}: the robust training signal is not consistent "

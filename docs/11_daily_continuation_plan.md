@@ -20,10 +20,12 @@ bash scripts/run_ombria_followup_matrix.sh
 1. Run or resume `scripts/run_ombria_followup_matrix.sh` on Colab/T4.
 2. Download and import `results/ombria_followup_artifacts.zip`.
 3. Check whether `modality_dropout_light` reduces clean IoU loss while keeping
-   missing/noisy-S2 gains.
-4. Check whether `modality_dropout_patch` fixes or improves `patch_after`.
-5. Update the feasibility decision and final experiment plan.
-6. Once the follow-up is strong enough, freeze the claim and start drafting the
+   missing-S2 gains.
+4. Check whether `modality_dropout_balanced` keeps the smaller clean penalty
+   while recovering the noisy-S2 gain.
+5. Check whether `modality_dropout_patch` fixes or improves `patch_after`.
+6. Update the feasibility decision and final experiment plan.
+7. Once the follow-up is strong enough, freeze the claim and start drafting the
    paper around a robustness-tradeoff contribution.
 
 ## Guardrail

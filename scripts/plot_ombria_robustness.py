@@ -17,12 +17,14 @@ TRAIN_LABELS = {
     "none": "Clean training",
     "modality_dropout": "Modality dropout",
     "modality_dropout_light": "Light dropout",
+    "modality_dropout_balanced": "Balanced dropout",
     "modality_dropout_patch": "Patch-aware dropout",
 }
 COLORS = {
     "none": "#1f77b4",
     "modality_dropout": "#d62728",
     "modality_dropout_light": "#2ca02c",
+    "modality_dropout_balanced": "#ff7f0e",
     "modality_dropout_patch": "#9467bd",
 }
 
@@ -56,6 +58,7 @@ def train_modes(rows: list[dict[str, str]]) -> list[str]:
         "none",
         "modality_dropout",
         "modality_dropout_light",
+        "modality_dropout_balanced",
         "modality_dropout_patch",
     )
     return [mode for mode in order if mode in observed]

@@ -27,6 +27,7 @@ TRAIN_S2_DEGRADATIONS = (
     "none",
     "modality_dropout",
     "modality_dropout_light",
+    "modality_dropout_balanced",
     "modality_dropout_patch",
 )
 
@@ -37,6 +38,7 @@ def choose_train_degrade_s2(mode: str, rng: np.random.Generator) -> str:
     schedules = {
         "modality_dropout": [0.50, 0.20, 0.10, 0.10, 0.10],
         "modality_dropout_light": [0.65, 0.12, 0.08, 0.08, 0.07],
+        "modality_dropout_balanced": [0.60, 0.12, 0.08, 0.13, 0.07],
         "modality_dropout_patch": [0.50, 0.15, 0.10, 0.10, 0.15],
     }
     if mode in schedules:
@@ -62,6 +64,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--base-channels", type=int, default=24)
+    parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--val-fraction", type=float, default=0.15)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--max-train-samples", type=int, default=0)
@@ -90,7 +93,7 @@ class OmbriaTorchDataset:
                 return len(samples)
 
             def __getitem__(self_inner, idx: int):
-                if degrade_s2 == "modality_dropout":
+                if degrade_s2 in TRAIN_S2_DEGRADATIONS and degrade_s2 != "none":
                     call_id = self_inner.calls
                     self_inner.calls += 1
                     rng = np.random.default_rng(seed + idx + call_id * 1_000_003)
@@ -267,7 +270,7 @@ def main() -> None:
         test_samples, args.variant, args.degrade_s2, args.seed
     ).dataset
     test_loader = DataLoader(
-        test_ds, batch_size=args.batch_size, shuffle=False, num_workers=2
+        test_ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers
     )
 
     if args.eval_checkpoint is not None:
@@ -300,9 +303,11 @@ def main() -> None:
     val_ds = OmbriaTorchDataset(val_samples, args.variant, "none", args.seed).dataset
 
     train_loader = DataLoader(
-        train_ds, batch_size=args.batch_size, shuffle=True, num_workers=2
+        train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers
     )
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    val_loader = DataLoader(
+        val_ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers
+    )
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     with (run_dir / "splits.json").open("w") as f:
