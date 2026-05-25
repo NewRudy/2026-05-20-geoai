@@ -36,6 +36,7 @@ def main() -> None:
             "variant": config.get("variant", ""),
             "degrade_s2": config.get("degrade_s2", ""),
             "train_degrade_s2": config.get("train_degrade_s2", "none"),
+            "s2_quality": config.get("s2_quality", "none"),
             "seed": config.get("seed", ""),
             "epochs": config.get("epochs", ""),
             "batch_size": config.get("batch_size", ""),
@@ -55,6 +56,8 @@ def main() -> None:
                 record["base_channels"] = metrics["checkpoint_base_channels"]
             if metrics.get("checkpoint_train_degrade_s2") is not None:
                 record["train_degrade_s2"] = metrics["checkpoint_train_degrade_s2"]
+            if metrics.get("checkpoint_s2_quality") is not None:
+                record["s2_quality"] = metrics["checkpoint_s2_quality"]
             for key, value in metrics.items():
                 if key.startswith("test_"):
                     record[key] = value

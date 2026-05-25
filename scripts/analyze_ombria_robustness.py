@@ -8,13 +8,24 @@ from pathlib import Path
 
 
 METRICS = ("test_iou", "test_f1", "test_precision", "test_recall")
-DEGRADATION_ORDER = ("none", "patch_after", "noise_after", "zero_after", "zero_all")
+DEGRADATION_ORDER = (
+    "none",
+    "patch_after",
+    "cloud_after_10",
+    "cloud_after_30",
+    "cloud_after_50",
+    "cloud_after_70",
+    "noise_after",
+    "zero_after",
+    "zero_all",
+)
 TRAIN_ORDER = (
     "none",
     "modality_dropout",
     "modality_dropout_light",
     "modality_dropout_balanced",
     "modality_dropout_patch",
+    "quality_dropout_light",
 )
 
 

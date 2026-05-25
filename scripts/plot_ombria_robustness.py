@@ -5,10 +5,24 @@ import csv
 from pathlib import Path
 
 
-DEGRADATION_ORDER = ("none", "patch_after", "noise_after", "zero_after", "zero_all")
+DEGRADATION_ORDER = (
+    "none",
+    "patch_after",
+    "cloud_after_10",
+    "cloud_after_30",
+    "cloud_after_50",
+    "cloud_after_70",
+    "noise_after",
+    "zero_after",
+    "zero_all",
+)
 LABELS = {
     "none": "Clean",
     "patch_after": "Patch mask",
+    "cloud_after_10": "Cloud 10%",
+    "cloud_after_30": "Cloud 30%",
+    "cloud_after_50": "Cloud 50%",
+    "cloud_after_70": "Cloud 70%",
     "noise_after": "Noise",
     "zero_after": "After S2 missing",
     "zero_all": "All S2 missing",
@@ -19,6 +33,7 @@ TRAIN_LABELS = {
     "modality_dropout_light": "Light dropout",
     "modality_dropout_balanced": "Balanced dropout",
     "modality_dropout_patch": "Patch-aware dropout",
+    "quality_dropout_light": "Quality-aware dropout",
 }
 COLORS = {
     "none": "#1f77b4",
@@ -26,6 +41,7 @@ COLORS = {
     "modality_dropout_light": "#2ca02c",
     "modality_dropout_balanced": "#ff7f0e",
     "modality_dropout_patch": "#9467bd",
+    "quality_dropout_light": "#17becf",
 }
 
 
@@ -60,6 +76,7 @@ def train_modes(rows: list[dict[str, str]]) -> list[str]:
         "modality_dropout_light",
         "modality_dropout_balanced",
         "modality_dropout_patch",
+        "quality_dropout_light",
     )
     return [mode for mode in order if mode in observed]
 

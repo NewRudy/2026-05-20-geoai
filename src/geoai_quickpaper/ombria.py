@@ -75,7 +75,7 @@ def collect_ombria_samples(root: Path, split: str) -> list[OmbriaSample]:
     ]
 
 
-def variant_channels(variant: str) -> int:
+def variant_channels(variant: str, s2_quality: str = "none") -> int:
     channels = {
         "s1_after": 1,
         "s1_bitemporal": 2,
@@ -83,10 +83,17 @@ def variant_channels(variant: str) -> int:
         "s2_bitemporal": 6,
         "multimodal": 8,
     }
+    if s2_quality not in {"none", "binary"}:
+        raise ValueError("s2_quality must be 'none' or 'binary'")
     try:
-        return channels[variant]
+        base_channels = channels[variant]
     except KeyError as exc:
-        raise ValueError(f"Unknown variant {variant!r}; choose from {VARIANTS}") from exc
+        raise ValueError(
+            f"Unknown variant {variant!r}; choose from {VARIANTS}"
+        ) from exc
+    if variant == "multimodal" and s2_quality == "binary":
+        return base_channels + 2
+    return base_channels
 
 
 def read_image(path: Path, mode: str) -> np.ndarray:
@@ -105,9 +112,12 @@ def load_sample(
     variant: str,
     degrade_s2: str = "none",
     rng: Optional[np.random.Generator] = None,
+    s2_quality: str = "none",
 ) -> tuple[np.ndarray, np.ndarray]:
     if variant not in VARIANTS:
         raise ValueError(f"Unknown variant {variant!r}; choose from {VARIANTS}")
+    if s2_quality not in {"none", "binary"}:
+        raise ValueError("s2_quality must be 'none' or 'binary'")
 
     if rng is None:
         rng = np.random.default_rng()
@@ -129,8 +139,31 @@ def load_sample(
         image = np.concatenate([s2_before, s2_after], axis=2)
     else:
         image = np.concatenate([s2_before, s2_after, s1_before, s1_after], axis=2)
+        if s2_quality == "binary":
+            image = np.concatenate(
+                [image, s2_quality_channels(s2_before, s2_after, degrade_s2)],
+                axis=2,
+            )
 
     return image.astype(np.float32), read_mask(sample.s2_mask)
+
+
+def s2_quality_channels(
+    before: np.ndarray,
+    after: np.ndarray,
+    mode: str,
+) -> np.ndarray:
+    h, w, _ = before.shape
+    before_quality = np.ones((h, w, 1), dtype=np.float32)
+    after_quality = np.ones((h, w, 1), dtype=np.float32)
+    if mode == "zero_all":
+        before_quality.fill(0.0)
+        after_quality.fill(0.0)
+    elif mode in {"zero_after", "noise_after"}:
+        after_quality.fill(0.0)
+    elif mode == "patch_after" or mode.startswith("cloud_after_"):
+        after_quality = (after.sum(axis=2, keepdims=True) > 0.0).astype(np.float32)
+    return np.concatenate([before_quality, after_quality], axis=2)
 
 
 def degrade_s2_pair(
@@ -156,10 +189,57 @@ def degrade_s2_pair(
             x = int(rng.integers(0, w - patch + 1))
             degraded[y : y + patch, x : x + patch, :] = 0.0
         return before, degraded
+    if mode.startswith("cloud_after_"):
+        fraction = _parse_cloud_fraction(mode)
+        return before, apply_cloud_like_mask(after, fraction, rng)
     raise ValueError(
         "Unknown S2 degradation mode "
-        f"{mode!r}; choose none, zero_all, zero_after, noise_after, patch_after"
+        f"{mode!r}; choose none, zero_all, zero_after, noise_after, patch_after, "
+        "or cloud_after_<percent>"
     )
+
+
+def _parse_cloud_fraction(mode: str) -> float:
+    try:
+        percent = int(mode.rsplit("_", 1)[1])
+    except (IndexError, ValueError) as exc:
+        raise ValueError(
+            f"Invalid cloud-like degradation {mode!r}; use cloud_after_<percent>"
+        ) from exc
+    if percent <= 0 or percent >= 100:
+        raise ValueError("cloud_after_<percent> must use 1..99")
+    return percent / 100.0
+
+
+def apply_cloud_like_mask(
+    image: np.ndarray,
+    target_fraction: float,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    degraded = image.copy()
+    h, w, _ = degraded.shape
+    mask = np.zeros((h, w), dtype=bool)
+    target_pixels = int(round(h * w * target_fraction))
+    attempts = 0
+    while int(mask.sum()) < target_pixels and attempts < 200:
+        attempts += 1
+        cy = int(rng.integers(0, h))
+        cx = int(rng.integers(0, w))
+        radius_y = int(rng.integers(max(8, h // 18), max(12, h // 6)))
+        radius_x = int(rng.integers(max(8, w // 18), max(12, w // 6)))
+        y0 = max(0, cy - radius_y)
+        y1 = min(h, cy + radius_y + 1)
+        x0 = max(0, cx - radius_x)
+        x1 = min(w, cx + radius_x + 1)
+        yy, xx = np.ogrid[y0:y1, x0:x1]
+        blob = (
+            ((yy - cy) / max(radius_y, 1)) ** 2
+            + ((xx - cx) / max(radius_x, 1)) ** 2
+            <= 1.0
+        )
+        mask[y0:y1, x0:x1] |= blob
+    degraded[mask, :] = 0.0
+    return degraded
 
 
 def summarize_samples(samples: Iterable[OmbriaSample]) -> dict[str, float]:
@@ -171,4 +251,3 @@ def summarize_samples(samples: Iterable[OmbriaSample]) -> dict[str, float]:
         "count": len(samples),
         "mean_flood_fraction": float(np.mean(flood_fractions)),
     }
-
