@@ -31,6 +31,9 @@ TRAIN_S2_DEGRADATIONS = (
     "modality_dropout_patch",
     "quality_dropout_light",
     "sar_anchor_light",
+    "sar_anchor_severe_w010",
+    "sar_anchor_severe_w020",
+    "sar_anchor_severe_w025",
 )
 
 ANCHOR_DEGRADATION_WEIGHT = {
@@ -44,6 +47,27 @@ ANCHOR_DEGRADATION_WEIGHT = {
     "zero_all": 1.0,
 }
 
+SEVERE_ANCHOR_DEGRADATION_WEIGHT = {
+    "none": 0.0,
+    "patch_after": 0.0,
+    "cloud_after_30": 0.0,
+    "cloud_after_50": 0.0,
+    "cloud_after_70": 0.65,
+    "noise_after": 0.45,
+    "zero_after": 0.75,
+    "zero_all": 1.0,
+}
+
+
+def is_sar_anchor_mode(mode: str) -> bool:
+    return mode.startswith("sar_anchor")
+
+
+def anchor_degradation_weight(train_mode: str, degrade_s2: str) -> float:
+    if train_mode.startswith("sar_anchor_severe"):
+        return SEVERE_ANCHOR_DEGRADATION_WEIGHT.get(degrade_s2, 0.0)
+    return ANCHOR_DEGRADATION_WEIGHT.get(degrade_s2, 0.0)
+
 
 def choose_train_degrade_s2(mode: str, rng: np.random.Generator) -> str:
     if mode == "none":
@@ -55,6 +79,9 @@ def choose_train_degrade_s2(mode: str, rng: np.random.Generator) -> str:
         "modality_dropout_patch": [0.50, 0.15, 0.10, 0.10, 0.15],
         "quality_dropout_light": [0.55, 0.10, 0.07, 0.07, 0.07, 0.07, 0.07],
         "sar_anchor_light": [0.45, 0.10, 0.08, 0.07, 0.08, 0.08, 0.07, 0.07],
+        "sar_anchor_severe_w010": [0.60, 0.08, 0.08, 0.08, 0.05, 0.05, 0.06],
+        "sar_anchor_severe_w020": [0.60, 0.08, 0.08, 0.08, 0.05, 0.05, 0.06],
+        "sar_anchor_severe_w025": [0.60, 0.08, 0.08, 0.08, 0.05, 0.05, 0.06],
     }
     if mode in schedules:
         choices = ["none", "zero_after", "zero_all", "noise_after", "patch_after"]
@@ -62,6 +89,8 @@ def choose_train_degrade_s2(mode: str, rng: np.random.Generator) -> str:
             choices.extend(["cloud_after_30", "cloud_after_50"])
         elif mode == "sar_anchor_light":
             choices.extend(["cloud_after_30", "cloud_after_50", "cloud_after_70"])
+        elif mode.startswith("sar_anchor_severe"):
+            choices.extend(["cloud_after_50", "cloud_after_70"])
         return str(
             rng.choice(
                 choices,
@@ -108,6 +137,7 @@ class OmbriaTorchDataset:
         seed: int = 7,
         s2_quality: str = "none",
         return_anchor: bool = False,
+        train_degrade_s2: str = "none",
     ) -> None:
         import torch
         from torch.utils.data import Dataset
@@ -147,7 +177,7 @@ class OmbriaTorchDataset:
                     )
                     anchor_x = torch.from_numpy(np.moveaxis(anchor_image, 2, 0))
                     anchor_weight = torch.tensor(
-                        ANCHOR_DEGRADATION_WEIGHT.get(sample_degrade_s2, 0.0),
+                        anchor_degradation_weight(train_degrade_s2, sample_degrade_s2),
                         dtype=torch.float32,
                     )
                     return x, y, anchor_x, anchor_weight
@@ -276,14 +306,14 @@ def main() -> None:
     args = parse_args()
     if args.train_degrade_s2 != "none" and args.variant != "multimodal":
         raise ValueError("--train-degrade-s2 is only supported for --variant multimodal")
-    if args.anchor_checkpoint is not None and args.train_degrade_s2 != "sar_anchor_light":
-        raise ValueError("--anchor-checkpoint is only used with --train-degrade-s2 sar_anchor_light")
+    if args.anchor_checkpoint is not None and not is_sar_anchor_mode(args.train_degrade_s2):
+        raise ValueError("--anchor-checkpoint is only used with SAR-anchor train modes")
     if (
-        args.train_degrade_s2 == "sar_anchor_light"
+        is_sar_anchor_mode(args.train_degrade_s2)
         and args.eval_checkpoint is None
         and args.anchor_checkpoint is None
     ):
-        raise ValueError("--train-degrade-s2 sar_anchor_light requires --anchor-checkpoint")
+        raise ValueError("SAR-anchor train modes require --anchor-checkpoint")
 
     train_all = collect_ombria_samples(args.root, "train")
     test_samples = collect_ombria_samples(args.root, "test")
@@ -386,7 +416,8 @@ def main() -> None:
         args.train_degrade_s2,
         args.seed,
         s2_quality=args.s2_quality,
-        return_anchor=args.train_degrade_s2 == "sar_anchor_light",
+        return_anchor=is_sar_anchor_mode(args.train_degrade_s2),
+        train_degrade_s2=args.train_degrade_s2,
     ).dataset
     val_ds = OmbriaTorchDataset(
         val_samples,
@@ -405,7 +436,7 @@ def main() -> None:
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     anchor_model = None
-    if args.train_degrade_s2 == "sar_anchor_light":
+    if is_sar_anchor_mode(args.train_degrade_s2):
         anchor_model = build_model(variant_channels("s1_bitemporal"), args.base_channels).to(device)
         anchor_model.load_state_dict(torch.load(args.anchor_checkpoint, map_location=device))
         anchor_model.eval()
@@ -452,7 +483,7 @@ def main() -> None:
             train_loss = 0.0
             train_batches = 0
             for batch in train_loader:
-                if args.train_degrade_s2 == "sar_anchor_light":
+                if is_sar_anchor_mode(args.train_degrade_s2):
                     x, y, anchor_x, anchor_weight = batch
                 else:
                     x, y = batch

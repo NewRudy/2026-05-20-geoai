@@ -21,6 +21,9 @@ TRAIN_ORDER = (
     "modality_dropout_light",
     "quality_dropout_light",
     "sar_anchor_light",
+    "sar_anchor_severe_w010",
+    "sar_anchor_severe_w020",
+    "sar_anchor_severe_w025",
 )
 
 

@@ -35,6 +35,9 @@ TRAIN_LABELS = {
     "modality_dropout_patch": "Patch-aware dropout",
     "quality_dropout_light": "Quality-aware dropout",
     "sar_anchor_light": "SAR-anchor training",
+    "sar_anchor_severe_w010": "Severe anchor 0.10",
+    "sar_anchor_severe_w020": "Severe anchor 0.20",
+    "sar_anchor_severe_w025": "Severe anchor 0.25",
 }
 COLORS = {
     "none": "#1f77b4",
@@ -44,6 +47,9 @@ COLORS = {
     "modality_dropout_patch": "#9467bd",
     "quality_dropout_light": "#17becf",
     "sar_anchor_light": "#8c564b",
+    "sar_anchor_severe_w010": "#7f7f7f",
+    "sar_anchor_severe_w020": "#bcbd22",
+    "sar_anchor_severe_w025": "#e377c2",
 }
 
 
@@ -80,6 +86,9 @@ def train_modes(rows: list[dict[str, str]]) -> list[str]:
         "modality_dropout_patch",
         "quality_dropout_light",
         "sar_anchor_light",
+        "sar_anchor_severe_w010",
+        "sar_anchor_severe_w020",
+        "sar_anchor_severe_w025",
     )
     return [mode for mode in order if mode in observed]
 
