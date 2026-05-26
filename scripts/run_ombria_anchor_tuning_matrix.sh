@@ -106,6 +106,8 @@ for seed in $SEEDS; do
   done
 
   for mode in $TEST_MODES; do
+    echo "=== evaluating test degradation: seed=${seed} mode=${mode} ==="
+
     "$PYTHON" scripts/train_ombria_unet.py \
       --root "$ROOT" \
       --out-dir "$RUNS_DIR" \
@@ -140,6 +142,11 @@ for seed in $SEEDS; do
         --seed "$seed" \
         --eval-checkpoint "$anchor_checkpoint"
     done
+
+    summarize_artifacts "_partial_seed${seed}" || true
+    if [ -f "results/tables/ombria_anchor_tuning_metrics_partial_seed${seed}.md" ]; then
+      cat "results/tables/ombria_anchor_tuning_metrics_partial_seed${seed}.md"
+    fi
   done
 
   summarize_artifacts "_partial_seed${seed}"
