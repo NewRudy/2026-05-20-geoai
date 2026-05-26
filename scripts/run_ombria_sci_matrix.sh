@@ -8,8 +8,55 @@ BASE_CHANNELS="${BASE_CHANNELS:-16}"
 SEEDS="${SEEDS:-7 13 21}"
 RUNS_DIR="${RUNS_DIR:-results/runs/ombria_sci}"
 PYTHON="${PYTHON:-python}"
+BACKUP_DIR="${BACKUP_DIR:-}"
 
 TEST_MODES="${TEST_MODES:-none cloud_after_10 cloud_after_30 cloud_after_50 cloud_after_70 patch_after zero_after zero_all noise_after}"
+
+summarize_artifacts() {
+  local suffix="$1"
+
+  "$PYTHON" scripts/summarize_ombria_runs.py \
+    --runs-dir "$RUNS_DIR" \
+    --out "results/tables/ombria_sci_run_summary${suffix}.csv"
+
+  "$PYTHON" scripts/analyze_ombria_robustness.py \
+    --summary "results/tables/ombria_sci_run_summary${suffix}.csv" \
+    --out-csv "results/tables/ombria_sci_robustness_summary${suffix}.csv" \
+    --out-md "results/tables/ombria_sci_robustness_summary${suffix}.md"
+
+  "$PYTHON" scripts/plot_ombria_robustness.py \
+    --summary "results/tables/ombria_sci_robustness_summary${suffix}.csv" \
+    --out "results/figures/ombria_sci_robustness${suffix}.png"
+
+  SUFFIX="$suffix" "$PYTHON" - <<'PY'
+import os
+from pathlib import Path
+from zipfile import ZIP_DEFLATED, ZipFile
+
+suffix = os.environ["SUFFIX"]
+out = Path(f"results/ombria_sci_artifacts{suffix}.zip")
+paths = [
+    Path(f"results/tables/ombria_sci_run_summary{suffix}.csv"),
+    Path(f"results/tables/ombria_sci_robustness_summary{suffix}.csv"),
+    Path(f"results/tables/ombria_sci_robustness_summary{suffix}.md"),
+    Path(f"results/figures/ombria_sci_robustness{suffix}.png"),
+]
+with ZipFile(out, "w", ZIP_DEFLATED) as zf:
+    for path in paths:
+        if path.exists():
+            zf.write(path)
+print(f"wrote {out}")
+PY
+
+  if [ -n "$BACKUP_DIR" ]; then
+    mkdir -p "$BACKUP_DIR"
+    cp "results/ombria_sci_artifacts${suffix}.zip" "$BACKUP_DIR/"
+    cp "results/tables/ombria_sci_run_summary${suffix}.csv" "$BACKUP_DIR/"
+    cp "results/tables/ombria_sci_robustness_summary${suffix}.csv" "$BACKUP_DIR/"
+    cp "results/tables/ombria_sci_robustness_summary${suffix}.md" "$BACKUP_DIR/"
+    cp "results/figures/ombria_sci_robustness${suffix}.png" "$BACKUP_DIR/"
+  fi
+}
 
 mkdir -p external
 if [ ! -d "$ROOT" ]; then
@@ -113,37 +160,10 @@ for seed in $SEEDS; do
       --seed "$seed" \
       --eval-checkpoint "$quality_checkpoint"
   done
+
+  summarize_artifacts "_partial_seed${seed}"
 done
 
-"$PYTHON" scripts/summarize_ombria_runs.py \
-  --runs-dir "$RUNS_DIR" \
-  --out results/tables/ombria_sci_run_summary.csv
-
-"$PYTHON" scripts/analyze_ombria_robustness.py \
-  --summary results/tables/ombria_sci_run_summary.csv \
-  --out-csv results/tables/ombria_sci_robustness_summary.csv \
-  --out-md results/tables/ombria_sci_robustness_summary.md
-
-"$PYTHON" scripts/plot_ombria_robustness.py \
-  --summary results/tables/ombria_sci_robustness_summary.csv \
-  --out results/figures/ombria_sci_robustness.png
-
-"$PYTHON" - <<'PY'
-from pathlib import Path
-from zipfile import ZIP_DEFLATED, ZipFile
-
-out = Path("results/ombria_sci_artifacts.zip")
-paths = [
-    Path("results/tables/ombria_sci_run_summary.csv"),
-    Path("results/tables/ombria_sci_robustness_summary.csv"),
-    Path("results/tables/ombria_sci_robustness_summary.md"),
-    Path("results/figures/ombria_sci_robustness.png"),
-]
-with ZipFile(out, "w", ZIP_DEFLATED) as zf:
-    for path in paths:
-        if path.exists():
-            zf.write(path)
-print(f"wrote {out}")
-PY
+summarize_artifacts ""
 
 cat results/tables/ombria_sci_robustness_summary.md
