@@ -26,6 +26,7 @@ TRAIN_ORDER = (
     "modality_dropout_balanced",
     "modality_dropout_patch",
     "quality_dropout_light",
+    "sar_anchor_light",
 )
 
 
