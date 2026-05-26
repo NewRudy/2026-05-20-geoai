@@ -278,7 +278,11 @@ def main() -> None:
         raise ValueError("--train-degrade-s2 is only supported for --variant multimodal")
     if args.anchor_checkpoint is not None and args.train_degrade_s2 != "sar_anchor_light":
         raise ValueError("--anchor-checkpoint is only used with --train-degrade-s2 sar_anchor_light")
-    if args.train_degrade_s2 == "sar_anchor_light" and args.anchor_checkpoint is None:
+    if (
+        args.train_degrade_s2 == "sar_anchor_light"
+        and args.eval_checkpoint is None
+        and args.anchor_checkpoint is None
+    ):
         raise ValueError("--train-degrade-s2 sar_anchor_light requires --anchor-checkpoint")
 
     train_all = collect_ombria_samples(args.root, "train")
