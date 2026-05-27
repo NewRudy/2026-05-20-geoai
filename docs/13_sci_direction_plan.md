@@ -13,7 +13,7 @@ noise robustness unless the evidence supports it.
 
 ## Current Readout
 
-The three-seed Colab follow-up supports one narrow result:
+The earlier three-seed Colab follow-up supported one narrow result:
 
 - `modality_dropout_light` improves all tested degraded Sentinel-2 settings.
 - The largest gain is all-S2-missing (`zero_all`), where clean multimodal
@@ -22,8 +22,14 @@ The three-seed Colab follow-up supports one narrow result:
   is not broad optical-corruption robustness.
 - `modality_dropout_balanced` is not consistent enough to be the main method.
 
-This is not yet strong enough as a finished SCI contribution. It is a promising
-direction, but the paper needs a clearer method and harder controls.
+The newer seed-7 SAR-anchor pilot is more promising: `sar_anchor_severe_w025`
+kept clean IoU almost unchanged while improving mean degraded IoU and worst
+degraded IoU beyond `modality_dropout_light`. See
+`docs/15_anchor_tuning_readout.md`.
+
+This is still not yet strong enough as a finished SCI contribution. It is a
+promising direction, but the paper needs weight ablation and multi-seed
+validation before manuscript drafting.
 
 ## Revised Paper Story
 
@@ -44,7 +50,20 @@ large new architecture.
 
 ## Method Upgrade
 
-The next method is `quality_dropout_light`.
+The current main candidate is `sar_anchor_severe`.
+
+It trains a multimodal U-Net under severe synthetic Sentinel-2 degradation and
+adds a SAR-anchor consistency loss against a frozen `s1_bitemporal` model when
+optical inputs become unreliable. This makes the claim narrower and more
+defensible than ordinary modality dropout:
+
+> A multimodal flood mapper should retain clean S1/S2 performance while
+> degrading toward the SAR-only fallback as optical reliability collapses.
+
+The alternative method `quality_dropout_light` remains a backup if the
+SAR-anchor weight ablation or multi-seed validation fails.
+
+## Backup Method
 
 It adds two Sentinel-2 quality channels to the existing multimodal U-Net:
 
@@ -68,9 +87,21 @@ cloud-like masks:
 
 ## Required Next Experiments
 
-Run `scripts/run_ombria_sci_matrix.sh` on Colab/T4.
+First finish the SAR-anchor weight ablation on Colab/T4:
 
-Default settings:
+```bash
+EPOCHS=25 BATCH_SIZE=8 BASE_CHANNELS=16 SEEDS="7" \
+ANCHOR_MODES="sar_anchor_severe_w010 sar_anchor_severe_w020" \
+bash scripts/run_ombria_anchor_tuning_matrix.sh
+```
+
+If `w010/w020/w025` confirm a clean-preserving robustness gain, run the winning
+anchor setting across at least three seeds.
+
+If the anchor route fails, run `scripts/run_ombria_sci_matrix.sh` for the
+quality-channel backup.
+
+Backup default settings:
 
 ```bash
 EPOCHS=25 BATCH_SIZE=8 BASE_CHANNELS=16 SEEDS="7 13 21" \
