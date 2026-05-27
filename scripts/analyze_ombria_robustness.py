@@ -30,6 +30,7 @@ TRAIN_ORDER = (
     "sar_anchor_severe_w010",
     "sar_anchor_severe_w020",
     "sar_anchor_severe_w025",
+    "quality_sar_anchor_severe_w025",
 )
 
 
@@ -64,6 +65,14 @@ def read_rows(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(f))
 
 
+def training_label(row: dict[str, str]) -> str:
+    train_mode = row.get("train_degrade_s2", "none") or "none"
+    s2_quality = row.get("s2_quality", "none") or "none"
+    if s2_quality != "none" and train_mode.startswith("sar_anchor"):
+        return f"quality_{train_mode}"
+    return train_mode
+
+
 def summarize(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     eval_rows = [row for row in rows if row.get("record_type") == "eval"]
     if eval_rows:
@@ -73,7 +82,7 @@ def summarize(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     for row in rows:
         if row.get("variant") != "multimodal":
             continue
-        train_mode = row.get("train_degrade_s2", "none") or "none"
+        train_mode = training_label(row)
         test_mode = row.get("degrade_s2", "none") or "none"
         groups[(test_mode, train_mode)].append(row)
 

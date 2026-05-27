@@ -24,10 +24,11 @@ The earlier three-seed Colab follow-up supported one narrow result:
 
 The newer SAR-anchor pilot is promising but not settled. The seed-7
 weight-ablation favored `sar_anchor_severe_w020`, but seed-13 and seed-21
-validation made `w020` look too unstable for a final manuscript method. The
-next active gate is to test `sar_anchor_severe_w025` on seeds 13 and 21 because
-the accumulated table suggests a better clean-performance tradeoff, but it is
-not yet a multi-seed result. See `docs/15_anchor_tuning_readout.md`.
+validation made `w020` look too unstable for a final manuscript method.
+`sar_anchor_severe_w025` is better, but still only a borderline multi-seed
+result: clean IoU stays just inside the target penalty, and degraded IoU
+improves over light dropout, but the all-S2-missing case remains below the
+SAR-only fallback. See `docs/15_anchor_tuning_readout.md`.
 
 This is still not yet strong enough as a finished SCI contribution. It is a
 promising direction, but the paper needs weight ablation and multi-seed
@@ -52,18 +53,19 @@ large new architecture.
 
 ## Method Upgrade
 
-The current main candidate family is `sar_anchor_severe`.
+The current main candidate family is quality-gated SAR anchoring.
 
-It trains a multimodal U-Net under severe synthetic Sentinel-2 degradation and
-adds a SAR-anchor consistency loss against a frozen `s1_bitemporal` model when
-optical inputs become unreliable. This makes the claim narrower and more
-defensible than ordinary modality dropout:
+It trains a multimodal U-Net with explicit Sentinel-2 quality channels under
+synthetic optical degradation, and adds a SAR-anchor consistency loss against a
+frozen `s1_bitemporal` model when optical inputs become unreliable. This makes
+the claim narrower and more defensible than ordinary modality dropout:
 
 > A multimodal flood mapper should retain clean S1/S2 performance while
 > degrading toward the SAR-only fallback as optical reliability collapses.
 
-The alternative method `quality_dropout_light` remains a backup if the
-SAR-anchor weight ablation or multi-seed validation fails.
+The simpler `quality_dropout_light` method remains a backup and a required
+baseline. The quality-gated anchor must beat both ordinary light dropout and
+quality-only dropout to become the proposed method.
 
 ## Backup Method
 
@@ -89,22 +91,22 @@ cloud-like masks:
 
 ## Required Next Experiments
 
-The seed-7 SAR-anchor weight ablation initially selected
-`sar_anchor_severe_w020`, but the additional seed-13/21 run made `w020` too
-weak to accept as the final method. Next test the cleaner candidate
-`sar_anchor_severe_w025` on the remaining seeds:
+The multi-seed `w025` result is a borderline pass, not a manuscript-ready win.
+Next run a seed-7 pilot that combines binary Sentinel-2 quality channels with
+the `w025` SAR anchor:
 
 ```bash
-EPOCHS=25 BATCH_SIZE=8 BASE_CHANNELS=16 SEEDS="13 21" \
-ANCHOR_MODES="sar_anchor_severe_w025" \
-bash scripts/run_ombria_anchor_tuning_matrix.sh
+EPOCHS=25 BATCH_SIZE=8 BASE_CHANNELS=16 SEEDS="7" \
+bash scripts/run_ombria_quality_anchor_matrix.sh
 ```
 
-If seed `13` and seed `21` preserve the clean IoU and degraded-IoU advantage,
-proceed to manuscript-oriented figures, qualitative panels, and LaTeX drafting.
+If this pilot clearly improves the degraded rows over both
+`modality_dropout_light` and `quality_dropout_light` without a large clean-IoU
+penalty, extend it to seeds `13` and `21`.
 
-If `w025` also fails, run `scripts/run_ombria_sci_matrix.sh` for the
-quality-channel backup rather than drafting around an unstable anchor result.
+If it does not clearly improve the result, do not force the SAR-anchor story;
+fall back to the quality-channel backup or reframe the work as a robustness
+audit.
 
 Backup default settings:
 

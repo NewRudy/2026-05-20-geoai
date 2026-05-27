@@ -38,6 +38,7 @@ TRAIN_LABELS = {
     "sar_anchor_severe_w010": "Severe anchor 0.10",
     "sar_anchor_severe_w020": "Severe anchor 0.20",
     "sar_anchor_severe_w025": "Severe anchor 0.25",
+    "quality_sar_anchor_severe_w025": "Quality + SAR anchor 0.25",
 }
 COLORS = {
     "none": "#1f77b4",
@@ -50,6 +51,7 @@ COLORS = {
     "sar_anchor_severe_w010": "#7f7f7f",
     "sar_anchor_severe_w020": "#bcbd22",
     "sar_anchor_severe_w025": "#e377c2",
+    "quality_sar_anchor_severe_w025": "#111827",
 }
 
 
@@ -89,6 +91,7 @@ def train_modes(rows: list[dict[str, str]]) -> list[str]:
         "sar_anchor_severe_w010",
         "sar_anchor_severe_w020",
         "sar_anchor_severe_w025",
+        "quality_sar_anchor_severe_w025",
     )
     return [mode for mode in order if mode in observed]
 
