@@ -24,6 +24,7 @@ TRAIN_ORDER = (
     "sar_anchor_severe_w010",
     "sar_anchor_severe_w020",
     "sar_anchor_severe_w025",
+    "quality_sar_anchor_severe_w025",
 )
 
 
@@ -42,6 +43,14 @@ def fmt(value: float | None) -> str:
 def read_rows(path: Path) -> list[dict[str, str]]:
     with path.open() as f:
         return list(csv.DictReader(f))
+
+
+def training_label(row: dict[str, str]) -> str:
+    train_mode = row.get("train_degrade_s2", "none") or "none"
+    s2_quality = row.get("s2_quality", "none") or "none"
+    if s2_quality != "none" and train_mode.startswith("sar_anchor"):
+        return f"quality_{train_mode}"
+    return train_mode
 
 
 def mean(values: list[float]) -> float | None:
@@ -66,7 +75,7 @@ def summarize(rows: list[dict[str, str]]) -> list[dict[str, str]]:
         if row.get("variant") != "multimodal":
             continue
         key = (
-            row.get("train_degrade_s2", "none") or "none",
+            training_label(row),
             row.get("degrade_s2", "none") or "none",
         )
         value = as_float(row.get("test_iou"))

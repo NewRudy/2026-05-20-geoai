@@ -25,6 +25,15 @@ summarize_artifacts() {
     --out-csv "results/tables/ombria_quality_anchor_robustness_summary${suffix}.csv" \
     --out-md "results/tables/ombria_quality_anchor_robustness_summary${suffix}.md"
 
+  "$PYTHON" scripts/analyze_ombria_graceful.py \
+    --summary "results/tables/ombria_quality_anchor_run_summary${suffix}.csv" \
+    --out-csv "results/tables/ombria_quality_anchor_graceful_metrics${suffix}.csv" \
+    --out-md "results/tables/ombria_quality_anchor_graceful_metrics${suffix}.md"
+
+  "$PYTHON" scripts/evaluate_ombria_quality_gate.py \
+    --metrics "results/tables/ombria_quality_anchor_graceful_metrics${suffix}.csv" \
+    --out-md "results/tables/ombria_quality_anchor_gate${suffix}.md"
+
   "$PYTHON" scripts/plot_ombria_robustness.py \
     --summary "results/tables/ombria_quality_anchor_robustness_summary${suffix}.csv" \
     --out "results/figures/ombria_quality_anchor_robustness${suffix}.png"
@@ -34,6 +43,9 @@ summarize_artifacts() {
     cp "results/tables/ombria_quality_anchor_run_summary${suffix}.csv" "$BACKUP_DIR/"
     cp "results/tables/ombria_quality_anchor_robustness_summary${suffix}.csv" "$BACKUP_DIR/"
     cp "results/tables/ombria_quality_anchor_robustness_summary${suffix}.md" "$BACKUP_DIR/"
+    cp "results/tables/ombria_quality_anchor_graceful_metrics${suffix}.csv" "$BACKUP_DIR/"
+    cp "results/tables/ombria_quality_anchor_graceful_metrics${suffix}.md" "$BACKUP_DIR/"
+    cp "results/tables/ombria_quality_anchor_gate${suffix}.md" "$BACKUP_DIR/"
     cp "results/figures/ombria_quality_anchor_robustness${suffix}.png" "$BACKUP_DIR/"
   fi
 }
@@ -169,7 +181,9 @@ for seed in $SEEDS; do
 
   summarize_artifacts "_partial_seed${seed}"
   cat "results/tables/ombria_quality_anchor_robustness_summary_partial_seed${seed}.md"
+  cat "results/tables/ombria_quality_anchor_gate_partial_seed${seed}.md"
 done
 
 summarize_artifacts ""
 cat results/tables/ombria_quality_anchor_robustness_summary.md
+cat results/tables/ombria_quality_anchor_gate.md
